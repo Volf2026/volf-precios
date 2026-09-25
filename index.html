@@ -258,6 +258,11 @@ ul.warn:empty{display:none}
         <button class="btn primary" data-act="load">Cargar Excel</button>
         <button class="btn" data-act="sync">Buscar actualización ahora</button>
       </div>
+      <p id="a-fotos" style="margin-top:18px"></p>
+      <div class="row" id="a-fotos-row" hidden>
+        <button class="btn" data-act="photos" id="a-fotos-btn">Guardar las fotos en la tablet</button>
+        <span class="help" id="a-fotos-prog"></span>
+      </div>
       <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" hidden>
     </section>
 
@@ -357,7 +362,7 @@ ul.warn:empty{display:none}
 (() => {
 'use strict';
 
-const VERSION = '1.0.3';
+const VERSION = '1.1.0';
 const $ = (s, r = document) => r.querySelector(s);
 const body = document.body;
 
@@ -422,6 +427,7 @@ const store = (() => {
    Estado
    ===================================================================== */
 let catalog = null;                              // { products: [...], meta: {...} }
+let photos = null;                               // { generado, fotos: { CODIGO: versión } } desde fotos/index.json
 let index = { bc: new Map(), sku: new Map() };
 const state = { overlay: null, remote: readJSON('volf.remoto', null), pendingReload: false };
 
@@ -768,6 +774,14 @@ function imgUrl(v) {
   return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : s;
 }
 
+function photoFor(p) {
+  if (p.i) return imgUrl(p.i);
+  const f = photos && photos.fotos;
+  const k = f ? skuKey(p.s) : '';
+  return k && f[k] ? `fotos/${k}.jpg?v=${encodeURIComponent(f[k])}` : '';
+}
+let showSeq = 0;
+
 function addCode(dl, k, v) {
   const d = document.createElement('div');
   const dt = document.createElement('dt'); dt.textContent = k;
@@ -777,8 +791,10 @@ function addCode(dl, k, v) {
 
 function showProduct(p, hit) {
   const R = $('#result');
+  const seq = ++showSeq;
+  const src = photoFor(p);
   R.classList.remove('miss');
-  R.classList.toggle('has-img', !!p.i);
+  R.classList.toggle('has-img', !!src);
   setText('#r-brand', p.b);
   $('#r-name').textContent = p.d;
   setText('#r-unit', p.u);
@@ -822,10 +838,10 @@ function showProduct(p, hit) {
 
   const fig = $('#r-shot'), img = $('#r-img');
   fig.classList.remove('ok');
-  if (p.i) {
-    img.onload = () => fig.classList.add('ok');
-    img.onerror = () => fig.classList.remove('ok');
-    img.src = imgUrl(p.i);
+  if (src) {
+    img.onload = () => { if (seq === showSeq) fig.classList.add('ok'); };
+    img.onerror = () => { if (seq !== showSeq) return; fig.classList.remove('ok'); R.classList.remove('has-img'); fit(); };
+    img.src = src;
   } else {
     img.onload = img.onerror = null;
     img.removeAttribute('src');
@@ -839,6 +855,7 @@ function showProduct(p, hit) {
 
 function showMiss(code, noData) {
   const R = $('#result');
+  ++showSeq;
   R.classList.add('miss');
   R.classList.remove('has-img');
   setText('#r-brand', '');
@@ -1004,6 +1021,12 @@ function renderAdmin() {
   fillCols($('#a-cols'), has ? m.cols : []);
   fillWarn($('#a-warn'), m);
 
+  const withPhoto = has ? catalog.products.reduce((n, p) => n + (photoFor(p) ? 1 : 0), 0) : 0;
+  $('#a-fotos').textContent = !photos ? 'Todavía no hay fotos publicadas del banco de imágenes.' :
+    `Fotos: ${fmtInt(withPhoto)} de ${plural(has ? catalog.products.length : 0, 'producto', 'productos')}` +
+    (photos.generado ? `, publicadas el ${fmtDate(photos.generado)}.` : '.');
+  $('#a-fotos-row').hidden = !(photos && withPhoto);
+
   $('#s-url').value = S.autoUrl || '';
   $('#s-min').value = String(S.autoMin);
   $('#s-basis').value = S.basis;
@@ -1080,6 +1103,7 @@ async function act(a) {
     await checkRemote({ force: true });
     toast(state.remote ? state.remote.msg : 'Listo');
   }
+  else if (a === 'photos') prefetchPhotos();
   else if (a === 'fullscreen') {
     const d = document.documentElement;
     if (d.requestFullscreen) d.requestFullscreen({ navigationUI: 'hide' }).catch(() => toast('Este navegador no deja pasar a pantalla completa desde acá.'));
@@ -1189,7 +1213,52 @@ async function checkRemote(opts = {}) {
 function scheduleRemote() {
   clearInterval(remoteTimer);
   const m = Number(S.autoMin) || 0;
-  if (m > 0 && (S.autoUrl || '').trim()) remoteTimer = setInterval(() => checkRemote(), m * 60000);
+  if (m > 0) remoteTimer = setInterval(() => { checkRemote(); checkPhotos(); }, m * 60000);
+}
+
+/* Fotos del banco de imágenes: fotos/index.json dice qué códigos tienen foto y su versión */
+let photosChecking = false;
+async function checkPhotos() {
+  if (location.protocol === 'file:' || photosChecking) return;
+  photosChecking = true;
+  try {
+    const res = await fetch('fotos/index.json?_=' + Date.now().toString(36), { cache: 'no-store' });
+    if (res.status === 404) { if (photos) { photos = null; await store.del('fotos'); } return; }
+    if (!res.ok) return;
+    const j = await res.json();
+    if (j && j.fotos && typeof j.fotos === 'object') {
+      photos = { generado: j.generado || '', fotos: j.fotos };
+      await store.set('fotos', photos);
+    }
+  } catch (e) {
+  } finally {
+    photosChecking = false;
+    if (state.overlay === 'admin') renderAdmin();
+  }
+}
+
+/* Baja todas las fotos para que se vean aunque se corte internet */
+let prefetching = false;
+async function prefetchPhotos() {
+  if (prefetching || !catalog || !photos) return;
+  prefetching = true;
+  const btn = $('#a-fotos-btn'), prog = $('#a-fotos-prog');
+  btn.disabled = true;
+  const urls = [...new Set(catalog.products.map(photoFor).filter(u => u && !/^https?:/i.test(u)))];
+  const total = urls.length;
+  let done = 0, fail = 0;
+  const worker = async () => {
+    while (urls.length) {
+      const u = urls.pop();
+      try { const r = await fetch(u); if (r.ok) await r.blob(); else fail++; } catch (e) { fail++; }
+      done++;
+      if (done % 10 === 0 || done === total) prog.textContent = `Guardando ${fmtInt(done)} de ${fmtInt(total)}…`;
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  prog.textContent = fail ? `Quedaron ${plural(fail, 'foto sin bajar', 'fotos sin bajar')}. Probá de nuevo con internet.` : `Listo: ${plural(total, 'foto guardada', 'fotos guardadas')}.`;
+  btn.disabled = false;
+  prefetching = false;
 }
 
 /* =====================================================================
@@ -1230,16 +1299,18 @@ async function init() {
   try {
     const saved = await store.get('catalog');
     if (saved && saved.products && saved.products.length) { catalog = saved; index = buildIndex(saved.products); }
+    const f = await store.get('fotos');
+    if (f && f.fotos) photos = f;
   } catch (e) {}
   renderIdle();
   keepAwake();
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); checkRemote(); } });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); checkRemote(); checkPhotos(); } });
   document.addEventListener('pointerdown', keepAwake, { passive: true });
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   registerSW();
   scheduleRemote();
-  setTimeout(() => checkRemote({ force: !catalog }), 1200);
-  window.addEventListener('online', () => checkRemote());
+  setTimeout(() => { checkRemote({ force: !catalog }); checkPhotos(); }, 1200);
+  window.addEventListener('online', () => { checkRemote(); checkPhotos(); });
   setInterval(nightly, 10 * 60 * 1000);
 }
 
