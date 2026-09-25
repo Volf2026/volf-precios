@@ -459,11 +459,11 @@ const codeKey = v => {
   if (/^\d+$/.test(t)) return t.replace(/^0+(?=\d)/, '');
   return t.replace(/[^A-Z0-9]/g, '');
 };
-/* Clave para códigos internos: saca volf_ y -Unico-U, espacios y guiones (RP 0205 = RP0205). */
+/* Clave para códigos internos: saca volf_, -Unico-U y el color de las variantes (-Rojo-U), espacios y guiones (RP 0205 = RP0205). */
 const skuKey = v => {
   let t = String(v ?? '').trim().toUpperCase();
   if (!t) return '';
-  t = t.replace(/^VOLF[_\-\s]+/, '').replace(/[\s_\-]+UNICO[\s_\-]*U$/, '').replace(/[\s_\-]+U$/, '');
+  t = t.replace(/^VOLF[_\-\s]+/, '').replace(/[\s_\-]+UNICO[\s_\-]*U$/, '').replace(/[\s_\-]+[A-ZÁÉÍÓÚÑ]+[\s_\-]+U$/, '').replace(/[\s_\-]+U$/, '');
   t = t.replace(/[^A-Z0-9]/g, '');
   if (/^\d+$/.test(t)) t = t.replace(/^0+(?=\d)/, '');
   return t;
