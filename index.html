@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1D1D1B">
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="application-name" content="VOLF Precios">
+<title>VOLF Consulta de precios</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="questrial-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* ---------- Tipografías (locales, funcionan sin internet) ---------- */
+@font-face{font-family:"Bodoni Moda";font-style:normal;font-weight:400 900;font-display:swap;src:url(bodoni-moda-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Bodoni Moda";font-style:normal;font-weight:400 900;font-display:swap;src:url(bodoni-moda-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Questrial";font-style:normal;font-weight:400;font-display:swap;src:url(questrial-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Questrial";font-style:normal;font-weight:400;font-display:swap;src:url(questrial-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+/* ---------- Identidad VOLF ---------- */
+:root{
+  --negro:#1D1D1B;      /* negro de los encabezados VOLF */
+  --porcelana:#F4F2EF;  /* fondo claro */
+  --lino:#EFEBE4;       /* superficie de la foto */
+  --piedra:#6B655C;     /* texto secundario sobre claro */
+  --humo:#A39E95;       /* texto secundario sobre oscuro */
+  --filo:#D8D2C7;       /* líneas finas */
+  --serif:"Bodoni Moda","Bodoni 72",Didot,Georgia,"Noto Serif",serif;
+  --sans:"Questrial","Century Gothic","Avenir Next",Futura,"Noto Sans",system-ui,sans-serif;
+  --line:max(2px,.34vmin);   /* filete del marco */
+  --bar:max(5px,1.05vmin);   /* barras gruesas del marco, como en el logo */
+  --pad:clamp(20px,5vmin,72px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--negro);color:var(--negro);font-family:var(--sans);overflow:hidden;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  font-kerning:normal;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+input,select{-webkit-user-select:text;user-select:text;font:inherit;color:inherit}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+svg.logo,svg.ghost{display:block;width:100%;height:auto;overflow:visible;fill:currentColor}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+.screen{position:fixed;inset:0;display:none;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+body[data-screen="idle"] #idle{display:flex}
+body[data-screen="result"] #result{display:grid}
+
+/* ---------- Reposo: la vitrina ---------- */
+#idle{background:var(--negro);color:var(--porcelana);flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.window{position:relative;width:min(48vmin,60vw);color:var(--porcelana);transition:opacity 1.4s}
+.window.pressing,.mini.pressing{opacity:.55}
+.beam-track{position:absolute;left:3%;right:3%;top:9%;bottom:9%;pointer-events:none}
+.beam{position:absolute;left:0;right:0;top:0;height:2px;opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(244,242,239,.92) 16%,rgba(244,242,239,.92) 84%,transparent);
+  box-shadow:0 0 14px 2px rgba(244,242,239,.26);animation:sweep 5.6s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes sweep{0%{top:0;opacity:0}7%{opacity:.9}40%{top:100%;opacity:.9}46%{top:100%;opacity:0}54%{top:100%;opacity:0}61%{opacity:.9}94%{top:0;opacity:.9}100%{top:0;opacity:0}}
+.idle-title{font-family:var(--serif);font-weight:500;font-variation-settings:"opsz" 60;font-size:clamp(30px,8.2vmin,104px);
+  line-height:1.04;letter-spacing:.004em;margin:clamp(24px,7vmin,90px) 0 0}
+.idle-hint{font-size:clamp(17px,3.4vmin,40px);line-height:1.4;color:var(--humo);margin:clamp(8px,1.9vmin,24px) 0 0;max-width:30em;padding:0 var(--pad)}
+.idle-sub{font-size:clamp(15px,2.7vmin,32px);color:var(--porcelana);margin:clamp(6px,1.2vmin,14px) 0 0;opacity:.8}
+.idle-foot{position:absolute;left:0;right:0;bottom:clamp(14px,3.6vmin,44px);margin:0;font-size:clamp(12px,2.2vmin,24px);color:var(--humo)}
+
+/* ---------- Resultado: la placa ---------- */
+#result{background:var(--porcelana);grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"head" "body"}
+#result.has-img{grid-template-columns:minmax(0,42fr) minmax(0,58fr);grid-template-areas:"shot head" "shot body"}
+.r-head{grid-area:head;display:flex;align-items:center;padding:clamp(12px,3.2vmin,40px) var(--pad) 0}
+.mini{width:clamp(64px,11vmin,140px);color:var(--negro);transition:opacity 1.4s}
+.shot{grid-area:shot;position:relative;margin:0;display:none;align-items:center;justify-content:center;background:var(--lino);overflow:hidden;min-height:0}
+#result.has-img .shot{display:flex}
+.shot img{position:relative;max-width:80%;max-height:80%;width:auto;height:auto;object-fit:contain;mix-blend-mode:multiply;opacity:0;transition:opacity .25s}
+.shot.ok img{opacity:1}
+.shot .ghost{position:absolute;width:30%;height:auto;color:var(--filo)}
+.shot.ok .ghost{display:none}
+.r-body{grid-area:body;min-height:0;display:flex;align-items:center;justify-content:center;padding:clamp(6px,1.5vmin,20px) var(--pad) clamp(20px,5vmin,64px)}
+.info{min-width:0;width:100%;max-width:62em;max-height:100%;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center}
+#result.has-img .info{align-items:flex-start;text-align:left}
+.brand{font-size:clamp(13px,2.5vmin,28px);color:var(--piedra);margin:0 0 clamp(4px,1vmin,12px)}
+.name{font-family:var(--sans);font-weight:400;font-size:clamp(21px,5.1vmin,60px);line-height:1.16;letter-spacing:.012em;margin:0;
+  max-width:100%;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-wrap:balance;overflow-wrap:anywhere}
+.unit{font-size:clamp(14px,2.7vmin,30px);color:var(--piedra);margin:clamp(4px,1.1vmin,14px) 0 0}
+#result.miss .name{font-family:var(--serif);font-weight:500;font-variation-settings:"opsz" 40;font-size:clamp(22px,5.4vmin,64px);letter-spacing:0}
+.plaque{position:relative;display:inline-flex;align-items:flex-start;justify-content:center;flex:none;max-width:100%;
+  border:var(--line) solid var(--negro);min-width:min(100%,clamp(240px,50vmin,640px));
+  padding:clamp(12px,3.2vmin,40px) clamp(18px,5vmin,64px) clamp(8px,2.4vmin,30px);
+  margin:clamp(16px,4.4vmin,56px) 0 clamp(10px,2.5vmin,30px)}
+.plaque::before,.plaque::after{content:"";position:absolute;left:9%;right:9%;height:var(--bar);background:var(--negro)}
+.plaque::before{top:calc(var(--line) / -2);transform:translateY(-50%)}
+.plaque::after{bottom:calc(var(--line) / -2);transform:translateY(50%)}
+.price{display:flex;align-items:flex-start;font-family:var(--serif);font-weight:600;font-variation-settings:"opsz" 28;
+  font-feature-settings:"lnum" 1,"tnum" 1;font-size:clamp(56px,16vmin,190px);line-height:.92;white-space:nowrap}
+.price .cur{font-size:.4em;line-height:1;margin:.16em .14em 0 0;font-weight:500}
+.price .dec{font-size:.4em;line-height:1;margin:.16em 0 0 .06em}
+.plaque .say{font-size:clamp(19px,4.2vmin,50px);line-height:1.2;padding:.15em 0 .1em;white-space:nowrap}
+.notes{display:flex;flex-direction:column;gap:clamp(3px,.8vmin,10px);align-items:inherit}
+.notes p{margin:0}
+.legend{font-size:clamp(14px,2.7vmin,30px)}
+.was{font-size:clamp(14px,2.7vmin,30px);color:var(--piedra);display:flex;gap:.6em;align-items:center}
+.was s{text-decoration-thickness:1px}
+.chip{background:var(--negro);color:var(--porcelana);padding:.16em .55em .2em;font-size:.86em}
+.net{font-size:clamp(12px,2.3vmin,25px);color:var(--piedra);letter-spacing:.02em}
+.net b{font-weight:400;color:var(--negro);letter-spacing:0;margin-left:.3em;font-variant-numeric:tabular-nums}
+.codes{display:flex;flex-wrap:wrap;justify-content:inherit;gap:clamp(4px,1.2vmin,14px) clamp(16px,4vmin,48px);margin:clamp(12px,3vmin,36px) 0 0;
+  font-size:clamp(12px,2.2vmin,24px);color:var(--piedra)}
+#result:not(.has-img) .codes{justify-content:center}
+.codes div{display:flex;gap:.5em}
+.codes dt{margin:0}
+.codes dd{margin:0;color:var(--negro);font-variant-numeric:tabular-nums}
+.timer{position:absolute;left:0;right:0;bottom:0;height:3px;pointer-events:none}
+.timer i{position:absolute;inset:0;background:var(--negro);opacity:.22;transform-origin:left center}
+
+/* Aparición de la placa: responde al escaneo */
+#result.reveal .plaque::before{animation:barTop .34s cubic-bezier(.2,.7,.2,1) both}
+#result.reveal .plaque::after{animation:barBot .34s cubic-bezier(.2,.7,.2,1) both}
+#result.reveal .price,#result.reveal .say{animation:rise .3s ease-out both}
+#result.reveal .name{animation:fade .24s ease-out both}
+@keyframes barTop{from{transform:translateY(-50%) scaleX(.3)}}
+@keyframes barBot{from{transform:translateY(50%) scaleX(.3)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+@keyframes fade{from{opacity:0}}
+
+@media (orientation:portrait){
+  .window{width:min(62vw,52vh)}
+  #result.has-img{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,46fr) minmax(0,54fr);grid-template-areas:"head" "shot" "body"}
+  #result.has-img .shot{margin:clamp(10px,2.4vmin,30px) var(--pad) 0}
+  #result.has-img .r-body{align-items:flex-start;padding-top:clamp(18px,4.5vmin,56px)}
+  #result.has-img .info{align-items:center;text-align:center}
+  #result.has-img .codes{justify-content:center}
+}
+
+/* ---------- PIN ---------- */
+.pin{position:fixed;inset:0;z-index:30;background:var(--negro);color:var(--porcelana);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,3vmin,36px)}
+.pin h2{font-family:var(--serif);font-weight:500;font-size:clamp(22px,4.4vmin,48px);margin:0}
+.dots{display:flex;gap:14px;height:16px}
+.dots i{width:14px;height:14px;border:1.5px solid var(--porcelana);border-radius:50%}
+.dots i.on{background:var(--porcelana)}
+.pin.bad .dots{animation:shake .32s}
+@keyframes shake{25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
+.keys{display:grid;grid-template-columns:repeat(3,clamp(64px,12vmin,120px));gap:clamp(8px,1.8vmin,20px)}
+.keys button{height:clamp(52px,9.4vmin,100px);border:1px solid rgba(244,242,239,.22);background:transparent;color:var(--porcelana);font-size:clamp(22px,4vmin,42px);border-radius:4px}
+.keys button:active{background:rgba(244,242,239,.12)}
+.keys .soft{font-size:clamp(13px,2.2vmin,22px);color:var(--humo);padding:0}
+
+/* ---------- Panel ---------- */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--porcelana);color:var(--negro);display:flex;flex-direction:column}
+.sheet-head{display:flex;align-items:center;gap:18px;padding:14px var(--pad);border-bottom:1px solid var(--filo)}
+.sheet-head .mini{width:62px}
+.sheet-head h2{font-family:var(--serif);font-weight:500;font-size:22px;margin:0;flex:1;line-height:1.15}
+.sheet-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 var(--pad) 48px}
+.sheet-body>section{max-width:780px;margin:0 auto;padding:24px 0;border-bottom:1px solid var(--filo)}
+.sheet-body>section:last-child{border-bottom:0}
+.sheet h3{font-family:var(--serif);font-weight:600;font-size:20px;margin:0 0 10px}
+.stat{font-family:var(--serif);font-weight:500;font-size:34px;line-height:1.1;margin:0}
+.sheet p{margin:6px 0 0;line-height:1.45}
+.help{color:var(--piedra);font-size:14px}
+.field{display:flex;flex-direction:column;gap:6px;margin:16px 0 0;font-size:15px}
+.field input,.field select,.row input{height:48px;border:1px solid #CFC8BC;background:#fff;padding:0 12px;border-radius:2px;font-size:16px;min-width:0}
+.check{display:flex;align-items:center;gap:12px;margin:14px 0 0;font-size:15px;min-height:32px}
+.check input{width:22px;height:22px;accent-color:var(--negro);flex:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 0;align-items:center}
+.row input{flex:1 1 220px}
+.btn{height:48px;padding:0 20px;border:1px solid var(--negro);background:transparent;border-radius:2px;font-size:15px}
+.btn.primary{background:var(--negro);color:var(--porcelana)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45}
+.link{background:none;border:0;padding:8px 0;text-decoration:underline;text-underline-offset:3px;font-size:15px}
+.danger{color:#8A2A1E}
+dl.cols{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;font-size:14px;margin:12px 0 0}
+dl.cols dt{color:var(--piedra)}
+dl.cols dd{margin:0;overflow-wrap:anywhere}
+ul.warn{margin:12px 0 0;padding-left:18px;font-size:14px;line-height:1.5}
+ul.warn:empty{display:none}
+
+.modal{position:fixed;inset:0;z-index:40;background:rgba(29,29,27,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-card{background:var(--porcelana);width:100%;max-width:560px;max-height:92vh;overflow:auto;padding:26px}
+.modal-card h3{font-family:var(--serif);font-weight:600;font-size:22px;margin:0 0 8px}
+.modal-card p{margin:6px 0 0;line-height:1.45}
+
+.toast{position:fixed;left:50%;bottom:24px;z-index:50;transform:translate(-50%,16px);background:var(--negro);color:var(--porcelana);
+  padding:12px 18px;font-size:15px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-screen="idle">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="volf-logo" viewBox="16.25 10.5 200.5 129" fill="currentColor"><rect x="16.25" y="13" width="3.6" height="124"/><rect x="213.15" y="13" width="3.6" height="124"/><rect x="16.25" y="13" width="200.5" height="3.5"/><rect x="16.25" y="133.5" width="200.5" height="3.5"/><rect x="34.75" y="10.5" width="163.5" height="8"/><rect x="34.75" y="131.5" width="163.5" height="8"/><g transform="scale(0.06250000) translate(0.000000,2400.000000) scale(0.100000,-0.100000)"><path d="M6120 17661 c-20 -4 -41 -11 -48 -15 -46 -28 40 -122 144 -156 156 -51 187 -82 247 -241 14 -36 38 -91 55 -125 43 -85 59 -148 81 -315 15 -113 28 -168 56 -240 61 -156 74 -206 104 -374 22 -122 40 -188 74 -276 52 -131 70 -202 92 -374 17 -131 28 -171 86 -316 27 -68 46 -140 64 -248 29 -164 42 -215 104 -391 29 -81 48 -162 65 -275 29 -184 29 -182 90 -343 35 -91 53 -160 71 -271 24 -142 34 -179 104 -368 20 -56 37 -131 51 -235 20 -149 26 -170 115 -418 12 -36 32 -126 44 -200 20 -123 40 -195 114 -395 16 -43 33 -128 46 -223 15 -114 29 -179 57 -255 20 -56 49 -138 64 -182 17 -46 36 -133 45 -205 13 -93 27 -152 57 -230 66 -173 77 -215 99 -377 21 -163 35 -215 76 -298 43 -85 62 -152 83 -299 23 -161 37 -213 84 -324 35 -80 56 -171 76 -317 19 -143 41 -228 85 -325 47 -105 57 -142 80 -310 15 -107 33 -170 100 -345 17 -44 35 -129 50 -230 27 -192 37 -230 80 -315 45 -90 62 -152 80 -305 12 -96 27 -160 57 -245 152 -437 151 -569 -7 -648 -22 -11 -67 -36 -100 -56 -33 -20 -91 -46 -130 -57 -119 -36 -152 -64 -111 -99 22 -17 1921 -19 1954 -2 57 32 16 61 -144 103 -252 66 -318 123 -318 274 1 89 24 372 34 407 6 20 15 87 20 150 5 72 16 132 30 167 13 34 24 93 29 165 5 61 15 125 21 141 7 17 16 91 21 165 5 74 13 207 18 295 5 88 15 176 21 195 5 19 15 78 21 130 5 52 21 136 34 185 13 50 26 119 30 155 3 36 13 101 20 145 8 44 22 195 30 335 9 140 22 293 30 340 7 47 16 116 20 153 4 37 16 98 26 135 11 37 26 114 34 172 8 58 21 155 29 215 8 61 20 189 26 285 13 221 30 352 80 615 48 258 57 325 70 540 11 200 18 241 71 429 59 206 67 246 89 440 14 118 33 218 56 303 71 254 83 314 104 492 14 123 32 222 56 308 71 254 83 314 104 492 14 123 32 222 56 308 68 243 82 309 94 423 22 215 51 381 95 535 44 154 57 224 95 497 11 81 36 203 56 270 53 184 64 236 89 437 30 225 39 246 142 332 119 98 159 125 231 154 37 15 91 45 121 68 29 23 99 65 155 92 78 39 105 57 120 83 22 39 11 77 -26 91 -13 4 -439 7 -948 7 -959 -1 -980 -2 -980 -41 0 -34 83 -105 158 -135 100 -41 126 -61 157 -125 37 -75 42 -147 17 -275 -12 -58 -23 -166 -26 -240 -12 -273 -26 -475 -40 -559 -8 -47 -17 -117 -21 -154 -4 -37 -15 -97 -25 -133 -11 -36 -22 -109 -25 -162 -4 -53 -15 -129 -26 -168 -11 -40 -19 -103 -19 -145 0 -100 -18 -357 -35 -504 -8 -66 -17 -154 -20 -195 -3 -41 -17 -129 -30 -195 -14 -66 -29 -163 -35 -215 -6 -52 -17 -129 -24 -170 -8 -41 -20 -167 -26 -280 -16 -309 -18 -339 -35 -415 -8 -38 -15 -104 -15 -145 0 -41 -9 -109 -20 -150 -11 -41 -24 -113 -30 -160 -6 -47 -18 -110 -26 -140 -8 -30 -19 -129 -24 -220 -5 -91 -14 -247 -20 -346 -11 -205 -42 -386 -100 -604 -23 -84 -46 -201 -55 -280 -16 -138 -51 -286 -105 -445 -19 -57 -36 -135 -45 -213 -28 -234 -45 -316 -109 -497 -27 -79 -40 -143 -61 -305 -23 -175 -33 -224 -71 -335 -49 -144 -66 -225 -89 -413 -18 -145 -19 -150 -85 -367 -59 -199 -58 -193 -71 -317 -12 -123 -50 -301 -89 -418 -34 -103 -36 -110 -55 -244 -18 -129 -42 -188 -87 -216 -42 -25 -69 -25 -102 1 -37 29 -51 60 -81 185 -15 60 -49 172 -77 249 -35 101 -55 177 -70 275 -11 74 -30 162 -43 195 -12 33 -36 97 -53 141 -17 45 -40 133 -52 195 -41 232 -53 276 -91 358 -46 100 -63 162 -79 291 -16 133 -33 192 -84 301 -39 82 -49 117 -74 264 -23 134 -39 195 -75 288 -56 141 -69 192 -96 360 -22 133 -36 178 -95 312 -28 63 -39 110 -56 225 -26 182 -32 204 -86 315 -38 78 -47 110 -70 245 -23 144 -40 202 -118 418 -14 40 -35 128 -46 195 -30 181 -38 213 -85 322 -53 124 -61 152 -80 295 -17 137 -36 202 -80 291 -37 73 -60 154 -70 244 -13 120 -27 180 -65 276 -59 147 -77 210 -105 369 -30 165 -51 255 -102 420 -22 73 -42 169 -54 265 -24 194 -43 275 -91 410 -33 93 -43 140 -64 305 -28 223 -39 272 -89 400 -35 91 -45 139 -89 466 -9 71 -26 141 -46 190 -66 169 -98 338 -80 416 17 70 123 175 241 239 90 48 142 91 163 133 20 40 11 53 -42 65 -53 11 -1046 13 -1102 2z M16820 17534 c-30 -8 -105 -19 -167 -24 -68 -6 -134 -18 -170 -31 -115 -42 -189 -59 -327 -74 -198 -22 -238 -31 -346 -80 -53 -25 -159 -60 -240 -80 -80 -20 -165 -48 -190 -62 -25 -14 -67 -39 -95 -54 -27 -16 -84 -36 -125 -45 -85 -19 -128 -38 -185 -84 -51 -41 -98 -64 -159 -79 -64 -16 -111 -40 -171 -90 -27 -23 -81 -53 -120 -69 -38 -15 -101 -51 -140 -80 -38 -30 -96 -67 -127 -83 -31 -16 -82 -49 -112 -74 -31 -25 -80 -61 -109 -79 -28 -19 -65 -48 -82 -66 -16 -18 -61 -56 -100 -85 -38 -29 -86 -70 -105 -90 -19 -21 -71 -61 -115 -90 -111 -72 -376 -347 -504 -522 -29 -40 -57 -73 -62 -73 -4 0 -34 -33 -66 -72 -31 -40 -78 -96 -104 -124 -26 -28 -56 -68 -67 -90 -11 -21 -43 -70 -72 -109 -29 -38 -67 -101 -86 -139 -19 -37 -56 -92 -83 -122 -36 -39 -58 -78 -84 -143 -19 -49 -55 -118 -80 -153 -25 -36 -60 -105 -80 -161 -20 -54 -52 -120 -70 -145 -48 -66 -54 -79 -81 -181 -16 -59 -42 -122 -75 -178 -31 -53 -56 -114 -65 -153 -8 -36 -25 -110 -37 -165 -12 -55 -45 -161 -75 -235 -46 -117 -54 -151 -64 -245 -23 -230 -42 -364 -71 -480 -25 -102 -30 -146 -35 -300 -3 -113 -13 -219 -25 -284 -24 -131 -24 -162 3 -297 17 -87 21 -142 20 -274 -1 -157 0 -168 29 -255 19 -56 34 -127 40 -190 5 -55 13 -129 18 -165 6 -36 15 -112 22 -170 14 -123 42 -232 92 -350 21 -52 48 -145 66 -235 24 -117 37 -159 62 -199 18 -28 40 -64 50 -81 10 -16 32 -82 49 -145 24 -88 42 -133 79 -190 26 -41 62 -113 80 -160 18 -47 56 -121 85 -165 30 -44 63 -100 73 -125 11 -25 44 -76 73 -115 28 -38 65 -98 82 -133 17 -34 53 -91 82 -125 28 -35 75 -97 104 -138 62 -87 132 -179 205 -268 28 -36 70 -87 92 -115 65 -83 555 -565 610 -600 27 -18 71 -51 98 -74 26 -23 69 -56 95 -73 26 -18 73 -54 104 -80 32 -26 84 -62 115 -80 32 -18 87 -55 122 -81 35 -27 86 -60 115 -75 28 -14 83 -49 121 -79 47 -36 101 -65 162 -88 51 -18 115 -50 142 -69 62 -45 111 -69 181 -92 30 -9 98 -41 150 -70 70 -39 130 -63 225 -90 72 -20 177 -58 235 -85 89 -41 123 -52 220 -66 63 -9 194 -39 290 -66 300 -85 347 -92 685 -108 110 -5 226 -14 258 -19 85 -15 593 -15 637 -1 19 6 132 15 250 20 370 15 456 29 805 131 55 16 159 38 230 49 118 18 140 25 240 75 77 38 138 61 204 75 112 25 147 39 227 91 33 21 107 54 163 73 66 22 116 46 144 68 42 35 117 78 136 78 33 0 130 48 172 86 28 24 85 62 127 83 43 22 97 55 121 75 24 20 76 55 115 78 39 22 87 55 106 73 19 18 69 57 110 87 41 31 89 70 105 88 17 18 66 56 110 85 91 60 560 525 636 630 23 33 68 89 99 125 31 36 67 81 81 100 13 19 47 61 76 92 28 31 61 74 71 95 11 21 44 70 72 108 29 39 65 97 80 130 16 33 49 87 75 120 26 33 67 101 90 150 23 50 63 120 88 157 25 36 55 97 67 135 12 37 46 111 75 163 39 69 63 130 89 225 21 77 56 171 86 231 28 56 56 131 64 170 8 38 22 107 31 153 9 46 37 137 61 203 50 134 69 238 79 439 4 74 16 178 26 232 15 76 19 144 19 296 0 182 2 204 25 281 31 104 31 114 -1 203 -25 69 -27 82 -29 292 -1 142 -8 256 -18 320 -9 55 -19 143 -22 195 -16 236 -32 317 -91 456 -31 71 -49 135 -64 220 -31 179 -47 231 -95 321 -28 51 -57 126 -76 195 -24 89 -41 129 -80 190 -34 51 -61 108 -80 170 -21 68 -43 114 -83 172 -31 43 -63 101 -72 130 -24 72 -40 103 -94 171 -25 33 -59 83 -75 110 -16 28 -50 79 -77 114 -27 35 -62 89 -78 120 -15 32 -48 82 -72 112 -25 29 -57 72 -71 94 -15 22 -57 72 -95 110 -37 39 -103 113 -147 165 -126 149 -393 416 -466 465 -36 25 -75 58 -88 75 -12 17 -54 55 -94 84 -40 30 -85 68 -102 86 -16 17 -59 49 -95 70 -36 21 -91 59 -123 84 -32 24 -86 60 -120 80 -34 19 -88 57 -120 84 -32 27 -87 61 -125 76 -37 15 -96 49 -131 75 -43 33 -93 59 -156 80 -55 20 -121 52 -165 82 -67 45 -119 66 -245 98 -22 6 -78 33 -125 61 -90 53 -107 59 -251 90 -51 11 -134 40 -190 65 -122 56 -176 70 -349 89 -77 9 -180 28 -240 46 -58 16 -157 37 -220 45 -63 8 -140 23 -170 32 -79 24 -1174 30 -1260 7z m615 -298 c197 -49 264 -62 420 -80 161 -19 241 -39 325 -81 69 -35 123 -52 259 -85 59 -14 106 -33 155 -64 67 -42 121 -63 256 -100 34 -10 78 -34 115 -62 33 -25 92 -61 131 -80 39 -18 98 -53 130 -77 32 -25 96 -63 142 -86 45 -23 107 -64 137 -91 30 -27 78 -61 107 -76 29 -14 78 -47 108 -73 30 -26 73 -61 95 -77 148 -107 769 -720 854 -844 33 -47 71 -96 86 -110 15 -14 46 -52 68 -85 23 -33 62 -82 88 -110 26 -27 65 -86 88 -130 22 -44 59 -102 82 -130 23 -27 56 -79 74 -115 18 -36 56 -96 83 -133 29 -39 66 -106 86 -159 20 -50 54 -115 76 -144 44 -59 68 -109 93 -194 9 -30 38 -90 66 -133 37 -58 55 -101 72 -170 13 -53 41 -126 66 -175 58 -110 70 -145 98 -288 15 -79 40 -161 70 -233 51 -125 81 -240 90 -351 9 -106 23 -182 50 -276 31 -107 62 -281 75 -424 5 -63 14 -142 20 -175 5 -33 10 -238 10 -455 0 -349 -3 -408 -20 -509 -11 -62 -20 -142 -20 -176 0 -46 -9 -87 -34 -157 -27 -73 -40 -137 -61 -293 -36 -276 -50 -336 -100 -445 -28 -62 -52 -139 -70 -220 -31 -143 -40 -167 -100 -270 -28 -49 -52 -110 -69 -175 -21 -79 -36 -114 -75 -170 -27 -38 -63 -103 -80 -144 -17 -41 -53 -104 -80 -140 -27 -36 -63 -97 -81 -134 -18 -38 -53 -97 -79 -130 -26 -34 -65 -89 -86 -122 -21 -33 -59 -85 -85 -115 -25 -30 -65 -82 -88 -115 -23 -33 -57 -72 -76 -87 -19 -16 -81 -85 -137 -154 -63 -77 -128 -145 -168 -176 -36 -27 -123 -103 -192 -168 -69 -65 -150 -133 -180 -150 -30 -18 -75 -52 -102 -77 -27 -26 -83 -60 -133 -84 -52 -23 -107 -58 -139 -87 -40 -36 -73 -56 -131 -76 -44 -15 -114 -51 -159 -82 -68 -46 -96 -58 -187 -80 -85 -21 -123 -36 -184 -75 -95 -60 -107 -63 -269 -88 -71 -11 -157 -29 -190 -41 -33 -11 -134 -39 -225 -61 l-165 -40 -520 4 c-518 4 -520 4 -625 29 -58 14 -141 40 -185 56 -96 37 -135 46 -285 66 -133 17 -182 33 -247 77 -57 39 -114 61 -218 84 -95 21 -150 43 -211 86 -25 17 -88 48 -140 69 -52 21 -118 56 -147 78 -28 22 -90 58 -137 80 -47 22 -109 61 -139 87 -30 25 -84 61 -121 80 -36 18 -91 53 -121 78 -30 24 -81 61 -114 82 -56 36 -108 80 -259 216 -33 30 -81 71 -106 89 -57 44 -362 349 -414 415 -22 28 -65 77 -95 111 -97 106 -164 186 -215 253 -27 37 -66 85 -87 108 -21 23 -54 72 -73 110 -19 38 -52 92 -75 120 -22 28 -59 82 -82 120 -23 37 -59 89 -81 115 -23 27 -55 87 -78 143 -23 59 -54 116 -79 145 -57 67 -76 104 -101 190 -12 41 -43 113 -70 160 -26 47 -58 119 -70 160 -12 41 -46 125 -76 185 -42 85 -63 144 -90 255 -24 97 -51 180 -84 251 -51 109 -62 157 -95 395 -8 62 -34 176 -56 255 -80 282 -94 449 -94 1119 0 671 14 837 94 1120 23 80 50 199 62 265 27 160 54 261 102 375 31 74 94 278 97 310 0 3 23 42 50 85 28 44 58 105 67 135 25 85 49 135 93 194 22 29 56 94 76 144 20 53 57 120 86 159 27 37 65 97 83 133 18 37 50 86 71 110 20 25 57 77 82 115 24 39 65 95 91 125 26 30 61 76 79 101 45 67 518 536 581 577 30 19 80 58 112 88 32 29 85 67 117 83 33 17 86 53 119 82 32 28 92 68 134 89 42 21 100 56 128 78 34 27 81 50 146 72 52 17 117 47 143 66 75 55 140 82 239 99 111 19 146 31 243 83 94 51 124 58 296 77 76 8 164 22 194 30 30 8 91 19 135 25 44 6 114 20 155 30 112 28 115 28 395 25 260 -2 260 -2 410 -39z M31317 17514 c-4 -4 -806 -7 -1784 -8 -1875 -1 -1823 0 -1823 -44 0 -10 25 -62 55 -117 63 -114 75 -160 76 -293 0 -53 5 -119 10 -147 10 -48 21 -464 37 -1395 7 -387 10 -441 27 -490 17 -49 19 -91 20 -395 1 -334 2 -342 29 -460 28 -119 28 -123 27 -445 -1 -265 1 -341 15 -410 43 -220 46 -2496 4 -2650 -9 -31 -14 -165 -15 -440 -3 -395 -3 -395 -31 -495 -28 -100 -28 -100 -30 -490 -2 -318 -6 -405 -19 -470 -18 -83 -24 -292 -43 -1470 -6 -400 -10 -475 -24 -506 -24 -55 -193 -224 -283 -284 -191 -128 -230 -160 -233 -186 -2 -14 3 -31 11 -37 20 -17 2093 -20 2125 -3 48 25 17 60 -84 95 -38 13 -116 46 -174 74 -58 28 -134 58 -170 67 -75 19 -107 34 -175 83 -27 19 -74 46 -105 60 -75 34 -107 58 -128 95 -21 39 -27 244 -41 1262 -7 570 -11 682 -25 750 -15 70 -17 149 -17 643 0 563 0 563 -26 655 -26 92 -26 92 -33 722 -5 458 -10 642 -20 675 -21 75 -17 198 7 246 43 81 73 89 258 68 77 -8 158 -20 180 -25 22 -5 104 -14 181 -19 236 -16 313 -62 374 -223 38 -102 50 -126 100 -206 22 -35 52 -103 66 -150 14 -47 48 -127 75 -177 27 -50 60 -124 74 -164 39 -113 64 -142 95 -105 17 21 17 2339 0 2360 -32 38 -64 2 -96 -105 -13 -45 -44 -121 -70 -168 -31 -55 -56 -120 -71 -181 -29 -117 -42 -144 -145 -301 -109 -164 -92 -156 -407 -195 -81 -11 -150 -26 -200 -45 -110 -42 -165 -53 -226 -47 -118 12 -159 56 -176 188 -13 104 -6 185 29 308 27 96 27 96 28 711 2 568 3 619 20 670 17 50 19 114 26 735 13 1184 23 1619 42 1714 11 59 15 126 14 225 -3 132 -1 146 25 223 20 58 31 114 36 186 12 172 69 227 232 227 49 0 96 9 162 30 71 23 113 30 173 30 43 0 129 7 189 15 61 9 193 20 295 25 102 6 264 15 360 20 99 5 199 16 230 24 125 36 211 14 301 -76 55 -55 76 -92 108 -190 13 -37 47 -104 76 -148 31 -47 65 -114 80 -160 15 -46 49 -113 80 -160 31 -46 65 -114 80 -159 14 -43 40 -100 58 -126 79 -117 96 -150 121 -241 15 -54 45 -134 66 -179 21 -45 49 -106 60 -136 12 -30 26 -60 32 -66 15 -19 45 -16 53 5 12 27 6 1681 -6 1725 -7 26 -20 44 -42 57 -31 19 -87 27 -100 14z M23399 17505 c-4 -3 -50 -6 -103 -6 -84 0 -96 -2 -96 -17 1 -21 155 -117 219 -137 25 -7 78 -23 117 -35 156 -48 182 -117 190 -525 4 -176 10 -257 26 -345 17 -93 21 -151 21 -305 -1 -186 -1 -192 29 -280 30 -88 31 -94 33 -320 2 -127 8 -250 15 -275 6 -25 15 -180 21 -345 5 -165 13 -412 18 -550 6 -197 12 -261 25 -300 15 -40 18 -92 21 -270 3 -206 5 -226 31 -320 26 -92 28 -113 26 -252 -1 -90 5 -197 14 -265 17 -127 38 -644 37 -903 -2 -381 -22 -1032 -33 -1075 -7 -27 -15 -198 -20 -435 -7 -376 -9 -393 -33 -482 -26 -91 -26 -97 -24 -400 1 -280 0 -313 -18 -363 -17 -49 -20 -100 -27 -465 -20 -1095 -25 -1258 -43 -1350 -15 -77 -17 -132 -12 -371 5 -325 5 -328 -75 -412 -29 -31 -67 -74 -85 -94 -17 -21 -69 -64 -115 -96 -195 -139 -264 -241 -183 -272 15 -6 507 -10 1277 -11 689 0 1285 -1 1323 -2 39 0 197 1 351 4 302 5 301 5 329 58 19 38 26 1835 7 1869 -33 58 -57 11 -97 -188 -15 -74 -44 -188 -66 -252 -25 -77 -45 -165 -58 -260 -21 -151 -39 -215 -88 -313 -42 -83 -49 -110 -77 -270 -47 -265 -112 -402 -218 -456 -68 -35 -122 -25 -240 45 -34 20 -92 36 -212 61 -131 26 -186 42 -263 78 -104 48 -118 53 -285 92 -172 39 -263 98 -324 207 -29 53 -29 53 -26 278 3 218 2 228 -23 320 -25 89 -28 114 -36 405 -4 171 -13 330 -19 355 -11 42 -20 277 -39 1045 -6 248 -12 351 -26 415 -12 63 -18 145 -20 315 -3 216 -5 236 -31 330 -27 97 -28 106 -25 330 1 177 -2 249 -14 315 -15 78 -40 678 -37 880 1 36 6 360 11 720 7 553 11 665 25 720 14 57 16 135 15 610 -1 545 -1 545 30 636 30 91 30 91 29 640 -1 531 0 551 21 624 20 72 21 94 21 620 0 598 2 620 57 672 45 42 220 156 303 198 119 60 191 144 143 166 -21 9 -1685 18 -1694 9z"/></g></symbol>
+</svg>
+
+<!-- Reposo -->
+<section id="idle" class="screen">
+  <div class="window" data-admin>
+    <svg class="logo" viewBox="0 0 200.5 129" role="img" aria-label="VOLF"><use href="#volf-logo" width="200.5" height="129"/></svg>
+    <div class="beam-track" aria-hidden="true"><i class="beam"></i></div>
+  </div>
+  <h1 class="idle-title">Consultá el precio</h1>
+  <p class="idle-hint" id="idle-hint">Acercá el código de barras del producto al lector.</p>
+  <p class="idle-sub" id="idle-sub" hidden></p>
+  <p class="idle-foot" id="idle-foot" hidden></p>
+</section>
+
+<!-- Resultado -->
+<section id="result" class="screen" aria-live="polite">
+  <header class="r-head"><div class="mini" data-admin><svg class="logo" viewBox="0 0 200.5 129" role="img" aria-label="VOLF"><use href="#volf-logo" width="200.5" height="129"/></svg></div></header>
+  <figure class="shot" id="r-shot"><svg class="ghost" viewBox="0 0 200.5 129" aria-hidden="true"><use href="#volf-logo" width="200.5" height="129"/></svg><img id="r-img" alt="" decoding="async" referrerpolicy="no-referrer"></figure>
+  <div class="r-body">
+    <div class="info" id="r-info">
+      <p class="brand" id="r-brand" hidden></p>
+      <h2 class="name" id="r-name"></h2>
+      <p class="unit" id="r-unit" hidden></p>
+      <div class="plaque" id="r-plaque"></div>
+      <div class="notes">
+        <p class="legend" id="r-legend"></p>
+        <p class="was" id="r-was" hidden></p>
+        <p class="net" id="r-net" hidden></p>
+      </div>
+      <dl class="codes" id="r-codes"></dl>
+    </div>
+  </div>
+  <div class="timer" aria-hidden="true"><i id="r-timer"></i></div>
+</section>
+
+<!-- PIN -->
+<div id="pin" class="pin" role="dialog" aria-modal="true" aria-labelledby="pin-t" hidden>
+  <h2 id="pin-t">PIN del panel</h2>
+  <div class="dots" id="pin-dots"></div>
+  <div class="keys">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button data-k="cancel" class="soft">Cancelar</button><button data-k="0">0</button><button data-k="back" class="soft">Borrar</button>
+  </div>
+</div>
+
+<!-- Panel -->
+<div id="admin" class="sheet" role="dialog" aria-modal="true" aria-labelledby="admin-t" hidden>
+  <div class="sheet-head">
+    <div class="mini"><svg class="logo" viewBox="0 0 200.5 129" aria-hidden="true"><use href="#volf-logo" width="200.5" height="129"/></svg></div>
+    <h2 id="admin-t">Panel de la consulta de precios</h2>
+    <button class="btn primary" data-act="close">Volver a la consulta</button>
+  </div>
+  <div class="sheet-body">
+    <section>
+      <h3>Lista de precios</h3>
+      <p class="stat" id="a-count"></p>
+      <p id="a-when"></p>
+      <p class="help" id="a-source"></p>
+      <dl class="cols" id="a-cols"></dl>
+      <ul class="warn" id="a-warn"></ul>
+      <div class="row">
+        <button class="btn primary" data-act="load">Cargar Excel</button>
+        <button class="btn" data-act="sync">Buscar actualización ahora</button>
+      </div>
+      <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" hidden>
+    </section>
+
+    <section>
+      <h3>Actualización automática</h3>
+      <label class="field">Dirección del Excel
+        <input type="text" id="s-url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="precios.xlsx">
+      </label>
+      <p class="help">Con <b>precios.xlsx</b> busca el archivo en la misma carpeta donde está publicada la app. También acepta el link de una hoja de Google publicada como CSV. Dejalo vacío para cargar solo a mano.</p>
+      <label class="field">Revisar si hay una lista nueva
+        <select id="s-min">
+          <option value="0">Nunca, solo con el botón</option>
+          <option value="15">Cada 15 minutos</option>
+          <option value="30">Cada 30 minutos</option>
+          <option value="60">Cada hora</option>
+          <option value="180">Cada 3 horas</option>
+        </select>
+      </label>
+      <p class="help" id="a-remote"></p>
+    </section>
+
+    <section>
+      <h3>Precio</h3>
+      <label class="field">El precio del Excel es
+        <select id="s-basis">
+          <option value="final">Final, con IVA incluido</option>
+          <option value="neto">Neto, sin IVA (la app le suma el IVA)</option>
+        </select>
+      </label>
+      <label class="field">IVA
+        <select id="s-iva">
+          <option value="21">21 %</option>
+          <option value="10.5">10,5 %</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="s-round"> Redondear el precio final al peso</label>
+      <label class="check"><input type="checkbox" id="s-net"> Mostrar también el precio sin impuestos nacionales</label>
+      <p class="help">Obligatorio al exhibir precios a consumidor final (Resolución 4/2025 de la Secretaría de Industria y Comercio).</p>
+      <label class="field">Texto debajo del precio
+        <input type="text" id="s-label" maxlength="60" autocomplete="off" placeholder="Precio vigente">
+      </label>
+    </section>
+
+    <section>
+      <h3>Pantalla</h3>
+      <label class="field">Tiempo que queda el producto en pantalla
+        <select id="s-sec">
+          <option value="8">8 segundos</option>
+          <option value="12">12 segundos</option>
+          <option value="15">15 segundos</option>
+          <option value="20">20 segundos</option>
+          <option value="30">30 segundos</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="s-codes"> Mostrar el código y el EAN del producto</label>
+      <div class="row"><button class="btn" data-act="fullscreen">Pantalla completa</button></div>
+    </section>
+
+    <section>
+      <h3>Buscar un producto a mano</h3>
+      <p class="help">Para cuando la etiqueta está dañada. También podés escanear acá.</p>
+      <div class="row">
+        <input type="text" id="a-query" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="EAN o código VOLF">
+        <button class="btn" data-act="query">Buscar</button>
+      </div>
+    </section>
+
+    <section>
+      <h3>PIN del panel</h3>
+      <div class="row">
+        <input type="password" id="a-pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Nuevo PIN, de 4 a 6 números">
+        <button class="btn" data-act="pin">Cambiar PIN</button>
+      </div>
+    </section>
+
+    <section>
+      <button class="link danger" data-act="wipe">Borrar la lista cargada en esta tablet</button>
+      <p class="help" id="a-version"></p>
+    </section>
+  </div>
+</div>
+
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title" hidden>
+  <div class="modal-card">
+    <h3 id="m-title"></h3>
+    <div id="m-body"></div>
+    <div class="row">
+      <button class="btn primary" id="m-yes"></button>
+      <button class="btn" id="m-no"></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+
+const VERSION = '1.0.3';
+const $ = (s, r = document) => r.querySelector(s);
+const body = document.body;
+
+/* =====================================================================
+   Ajustes (quedan guardados en la tablet)
+   ===================================================================== */
+const DEFAULTS = {
+  pin: '1234', label: 'Precio final', seconds: 15, showCodes: true,
+  basis: 'neto', iva: 21, showNet: true, round: false,
+  autoUrl: 'precios.xlsx', autoMin: 30, v: 2
+};
+const readJSON = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } };
+const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const savedSettings = readJSON('volf.ajustes', {});
+if (!savedSettings.v) {                       // ajustes de la versión 1.0.0: pasan a lista sin IVA
+  delete savedSettings.basis; delete savedSettings.showNet;
+  if (savedSettings.label === 'Precio vigente') delete savedSettings.label;
+}
+const S = Object.assign({}, DEFAULTS, savedSettings, { v: 2 });
+const saveSettings = () => writeJSON('volf.ajustes', S);
+
+/* =====================================================================
+   Almacenamiento de la lista (IndexedDB, con respaldo en localStorage)
+   ===================================================================== */
+const store = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open('volf-precios', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    } catch (e) { rej(e); }
+  }));
+  const tx = async (mode, fn) => {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t = db.transaction('kv', mode);
+      const req = fn(t.objectStore('kv'));
+      t.oncomplete = () => res(req && req.result);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  };
+  return {
+    async get(k) {
+      try { return await tx('readonly', s => s.get(k)); }
+      catch (e) { return readJSON('volf.kv.' + k, undefined); }
+    },
+    async set(k, v) {
+      try { await tx('readwrite', s => s.put(v, k)); }
+      catch (e) { localStorage.setItem('volf.kv.' + k, JSON.stringify(v)); }
+    },
+    async del(k) {
+      try { await tx('readwrite', s => s.delete(k)); } catch (e) {}
+      try { localStorage.removeItem('volf.kv.' + k); } catch (e) {}
+    }
+  };
+})();
+
+/* =====================================================================
+   Estado
+   ===================================================================== */
+let catalog = null;                              // { products: [...], meta: {...} }
+let index = { bc: new Map(), sku: new Map() };
+const state = { overlay: null, remote: readJSON('volf.remoto', null), pendingReload: false };
+
+/* =====================================================================
+   Utilidades de texto y números
+   ===================================================================== */
+const fmtInt = n => String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const plural = (n, one, many) => `${fmtInt(n)} ${n === 1 ? one : many}`;
+const pad2 = n => String(n).padStart(2, '0');
+const fmtDate = t => { const d = new Date(t); return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} a las ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+const headerText = v => {
+  const s = String(v ?? '').replace(/\b([sc])\/\s*(iva|imp)/gi, (m, a, b) => (a.toLowerCase() === 's' ? 'sin ' : 'con ') + b);
+  const last = s.split('/').pop().trim();
+  return s.includes('/') && last.length >= 3 ? last : s;          // exports de Odoo: se usa el último tramo
+};
+const normHeader = v => headerText(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const cellText = v => {
+  if (v == null) return '';
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(v);
+  return String(v).replace(/\s+/g, ' ').trim();
+};
+const lastSeg = s => (s.includes('/') ? s.split('/').pop().trim() : s);
+
+/* Clave para comparar códigos de barras: sin ceros a la izquierda
+   (así 0727373360592, 727373360592 y el mismo número guardado como número en Excel coinciden). */
+const codeKey = v => {
+  const t = String(v ?? '').trim().toUpperCase();
+  if (!t) return '';
+  if (/^\d+$/.test(t)) return t.replace(/^0+(?=\d)/, '');
+  return t.replace(/[^A-Z0-9]/g, '');
+};
+/* Clave para códigos internos: saca volf_ y -Unico-U, espacios y guiones (RP 0205 = RP0205). */
+const skuKey = v => {
+  let t = String(v ?? '').trim().toUpperCase();
+  if (!t) return '';
+  t = t.replace(/^VOLF[_\-\s]+/, '').replace(/[\s_\-]+UNICO[\s_\-]*U$/, '').replace(/[\s_\-]+U$/, '');
+  t = t.replace(/[^A-Z0-9]/g, '');
+  if (/^\d+$/.test(t)) t = t.replace(/^0+(?=\d)/, '');
+  return t;
+};
+const skuShow = s => String(s).replace(/^volf_/i, '').replace(/[-_]unico[-_]u$/i, '').replace(/-u$/i, '');
+
+/* Precio desde Excel: acepta números, "$ 12.345,50", "12345,5", "12,345.50"... */
+function parsePrice(v) {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : NaN;
+  let s = String(v ?? '').trim();
+  if (!s) return NaN;
+  s = s.replace(/ARS|\$|\s|\u00A0/gi, '');
+  if (!s || /^[-(]/.test(s)) return NaN;
+  const c = s.lastIndexOf(','), d = s.lastIndexOf('.');
+  if (c >= 0 && d >= 0) {
+    s = c > d ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  } else if (c >= 0) {
+    s = /^\d{1,3}(,\d{3})+$/.test(s) && !/,\d{1,2}$/.test(s) ? s.replace(/,/g, '') : s.replace(/,(?=.*,)/g, '').replace(',', '.');
+  } else if (d >= 0) {
+    if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  }
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/* Una celda de código de barras puede traer varios códigos: "7791234567890 / 0727373360592" */
+function splitCodes(v, st) {
+  if (v == null || v === '') return [];
+  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? [v.toFixed(0)] : [];
+  const out = [];
+  for (let part of String(v).split(/[,;\/|\n]+/)) {
+    part = part.trim().replace(/\.0+$/, '');
+    if (!part) continue;
+    if (/^\d+([.,]\d+)?e\+?\d+$/i.test(part)) { if (st) st.sci++; continue; }
+    const compact = part.replace(/[\s\-]/g, '');
+    if (/^\d{6,14}$/.test(compact)) { out.push(compact); continue; }
+    for (const w of part.split(/\s+/)) if (w.length >= 3) out.push(w);
+  }
+  return out;
+}
+
+function money(v) {
+  const c = Math.round(v * 100);
+  const d = c % 100;
+  return { i: fmtInt(Math.floor(c / 100)), d: d ? pad2(d) : '' };
+}
+const moneyText = v => { const m = money(v); return '$ ' + m.i + (m.d ? ',' + m.d : ''); };
+
+/* IVA en centavos, redondeado por línea como en Odoo: el precio de la tablet coincide con el que se cobra */
+const ivaMil = () => Math.round(Number(S.iva) * 10);             // 21 % -> 210, 10,5 % -> 105
+function finalPrice(p) {
+  if (p == null) return null;
+  const c = Math.round(p * 100);
+  let cents = S.basis === 'neto' ? c + Math.floor((c * ivaMil() + 500) / 1000) : c;
+  if (S.round) cents = Math.round(cents / 100) * 100;
+  return cents / 100;
+}
+function netPrice(p) {
+  if (p == null) return null;
+  const c = Math.round(p * 100);
+  return (S.basis === 'neto' ? c : Math.round(c * 1000 / (1000 + ivaMil()))) / 100;
+}
+
+function hashBytes(b) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36) + '-' + b.length.toString(36);
+}
+
+/* =====================================================================
+   Lectura del Excel
+   ===================================================================== */
+let xlsxLoading = null;
+function ensureXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  if (!xlsxLoading) {
+    xlsxLoading = new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'xlsx.core.min.js';
+      s.onload = () => res();
+      s.onerror = () => { xlsxLoading = null; rej(new Error('No se pudo cargar el lector de Excel.')); };
+      document.head.appendChild(s);
+    });
+  }
+  return xlsxLoading;
+}
+
+function decodeText(bytes) {
+  let t;
+  try { t = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch (e) { t = new TextDecoder('windows-1252').decode(bytes); }
+  return t.replace(/^\uFEFF/, '');
+}
+
+async function parseBytes(bytes, name) {
+  await ensureXLSX();
+  const zip = bytes[0] === 0x50 && bytes[1] === 0x4B;   // xlsx, xlsm
+  const ole = bytes[0] === 0xD0 && bytes[1] === 0xCF;   // xls
+  const opts = { cellFormula: false, cellHTML: false, cellNF: false, cellStyles: false, cellText: false };
+  const wb = (zip || ole)
+    ? XLSX.read(bytes, Object.assign({ type: 'array' }, opts))
+    : XLSX.read(decodeText(bytes), Object.assign({ type: 'string', raw: true }, opts));
+  return extract(wb, name);
+}
+
+/* Qué columna es cada cosa. Primero nombres exactos, después parecidos. */
+const EXACT = {
+  bc:    [/^EAN(13|14)?$/, /^CODIGODEBARRAS?$/, /^CODDEBARRAS?$/, /^CODBARRAS?$/, /^CODIGOBARRAS?$/, /^BARCODE$/, /^BARRAS?$/, /^GTIN(13|14)?$/, /^UPC$/, /^CODIGOEAN$/, /^EAN[A-Z0-9]+$/, /^CODIGODEBARRA[A-Z0-9]+$/],
+  sku:   [/^SKU$/, /^CODIGO$/, /^COD$/, /^CODIGOINTERNO$/, /^CODIGOVOLF$/, /^REFERENCIAINTERNA$/, /^REFERENCIA$/, /^REF$/, /^REFID$/, /^CODART$/, /^CODARTICULO$/, /^CODIGOARTICULO$/, /^CODIGODEARTICULO$/, /^CODIGOPRODUCTO$/, /^CODIGODEPRODUCTO$/, /^CODPRODUCTO$/, /^CODIGOUNIFICADO$/, /^CODODOO$/, /^DEFAULTCODE$/, /^ARTICULO$/, /^ITEM$/],
+  name:  [/^DESCRIPCION$/, /^DESCRIPCIONDELPRODUCTO$/, /^DESCRIPCIONDELARTICULO$/, /^PRODUCTO$/, /^NOMBRE$/, /^NOMBREDELPRODUCTO$/, /^DETALLE$/, /^TITULO$/, /^NAME$/, /^PRODUCTNAME$/, /^SKUNAME$/, /^ARTICULO$/],
+  old:   [/^PRECIOANTERIOR$/, /^PRECIOANTES$/, /^ANTES$/, /^PRECIOREGULAR$/, /^PRECIOTACHADO$/, /^PRECIOSINDESCUENTO$/, /^PRECIOORIGINAL$/, /^LISTPRICE$/],
+  net:   [/SINIMPUESTOS/, /SINIMP/, /SINIVA/, /^PRECIONETO$/, /^NETO$/],
+  price: [/^PRECIO$/, /^PRECIOFIJO$/, /^PRECIOFINAL$/, /^PRECIOVENTA$/, /^PRECIODEVENTA$/, /^PRECIOPUBLICO$/, /^PRECIOALPUBLICO$/, /^PVP$/, /^PRECIOCONIVA$/, /^PRECIOACTUAL$/, /^PRECIOLOCAL$/, /^PRECIOMINORISTA$/, /^PRECIOUNITARIO$/, /^PRECIOXUNIDAD$/, /^PRICE$/, /^SELLINGPRICE$/, /^BASEPRICE$/, /^IMPORTE$/],
+  brand: [/^MARCA$/, /^LINEA$/, /^FAMILIA$/, /^COLECCION$/, /^CATEGORIA$/, /^CATEGORIADEPRODUCTO$/, /^CATEGORIADELPRODUCTO$/, /^RUBRO$/, /^BRAND$/],
+  unit:  [/^PRESENTACION$/, /^UNIDAD$/, /^UNIDADDEMEDIDA$/, /^UM$/, /^UXB$/, /^UNIDADESPORBULTO$/, /^UNIDADESXCAJA$/, /^CONTENIDO$/, /^PACK$/, /^EMPAQUE$/],
+  img:   [/^IMAGEN$/, /^IMAGENURL$/, /^URLIMAGEN$/, /^URLDEIMAGEN$/, /^FOTO$/, /^URLFOTO$/, /^IMG$/, /^IMAGE$/, /^IMAGEURL$/, /^LINKIMAGEN$/, /^LINKFOTO$/]
+};
+const LOOSE = { bc: [/EAN/, /BARRA/], sku: [/^COD/, /SKU/], name: [/DESCRIP/, /NOMBRE/, /PRODUCTO/], price: [/PRECIO/, /PRICE/], img: [/IMAGEN/, /FOTO/] };
+const NOT_A_PRICE = /COSTO|COST|FOB|MARGEN|UTILIDAD|COMPRA|STOCK|CANTIDAD/;   // nunca mostrar costos
+const PRICE_ROLES = new Set(['price', 'old', 'net']);
+
+function assignRoles(norm, loose) {
+  const used = new Set();
+  const R = { bc: [], sku: null, name: null, old: null, net: null, price: null, brand: null, unit: null, img: null };
+  const ok = (role, h) => (role === 'bc' ? !/DUN/.test(h) : PRICE_ROLES.has(role) ? !NOT_A_PRICE.test(h) : true);
+  const take = (role, re) => {
+    for (let i = 0; i < norm.length; i++) {
+      const h = norm[i];
+      if (!h || used.has(i) || !re.test(h) || !ok(role, h)) continue;
+      used.add(i);
+      if (role === 'bc') R.bc.push(i); else { R[role] = i; return true; }
+    }
+    return false;
+  };
+  for (const re of EXACT.bc) take('bc', re);
+  for (const role of ['sku', 'name', 'old', 'net', 'price', 'brand', 'unit', 'img']) {
+    for (const re of EXACT[role]) if (take(role, re)) break;
+  }
+  if (loose) {
+    if (!R.bc.length) for (const re of LOOSE.bc) take('bc', re);
+    for (const role of ['sku', 'name', 'price', 'img']) {
+      if (R[role] == null) for (const re of LOOSE[role]) if (take(role, re)) break;
+    }
+  }
+  return R;
+}
+
+function findHeader(rows) {
+  const lim = Math.min(rows.length, 40);
+  for (let r = 0; r < lim; r++) {
+    const raw = rows[r] || [];
+    if (raw.filter(v => v !== '' && v != null).length < 2) continue;
+    const norm = raw.map(normHeader);
+    const strict = assignRoles(norm, false);
+    const hasCode = strict.bc.length || strict.sku != null;
+    if (!hasCode && strict.price == null) continue;
+    const roles = assignRoles(norm, true);
+    if ((roles.bc.length || roles.sku != null) && roles.price != null) return { row: r, raw, norm, roles };
+  }
+  return null;
+}
+
+const ROLE_NAMES = { bc: 'Código de barras', sku: 'Código', name: 'Descripción', price: 'Precio', old: 'Precio anterior', net: 'Precio sin impuestos', brand: 'Marca o línea', unit: 'Presentación', img: 'Imagen' };
+function describeCols(h) {
+  const out = [];
+  for (const k of Object.keys(ROLE_NAMES)) {
+    const v = h.roles[k];
+    if (k === 'bc') { if (v.length) out.push([ROLE_NAMES[k], v.map(i => cellText(headerText(h.raw[i]))).join(', ')]); }
+    else if (v != null) out.push([ROLE_NAMES[k], cellText(headerText(h.raw[v]))]);
+  }
+  return out;
+}
+function labelFrom(header) {
+  let s = cellText(header);
+  if (s === s.toUpperCase()) s = s.toLowerCase().replace(/\biva\b/g, 'IVA');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function extract(wb, name) {
+  const products = [], sheets = [];
+  const st = { noPrice: 0, dup: 0, sci: 0, noCode: 0 };
+  let cols = null, netLabel = '';
+  for (const sn of wb.SheetNames) {
+    const ws = wb.Sheets[sn];
+    if (!ws || !ws['!ref']) continue;
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: false });
+    const h = findHeader(rows);
+    if (!h) continue;
+    const R = h.roles;
+    const get = (row, c) => (c == null ? '' : row[c]);
+    let n = 0;
+    for (let r = h.row + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || !row.length) continue;
+      if (normHeader(get(row, R.price)) === h.norm[R.price]) continue;          // encabezado repetido
+      const codes = [];
+      for (const c of R.bc) for (const x of splitCodes(row[c], st)) codes.push(x);
+      const sku = cellText(get(row, R.sku));
+      if (!codes.length && !sku) { if (row.some(v => v !== '' && v != null)) st.noCode++; continue; }
+      const pr = parsePrice(get(row, R.price));
+      const p = pr > 0 ? pr : null;
+      if (p == null) st.noPrice++;
+      const prod = { s: sku, d: cellText(get(row, R.name)).replace(/^\[[^\]]*\]\s*/, '') || sku || codes[0], p, c: codes };
+      const o = parsePrice(get(row, R.old)); if (o > 0) prod.o = o;
+      const nt = parsePrice(get(row, R.net)); if (nt > 0) prod.n = nt;
+      const b = lastSeg(cellText(get(row, R.brand))); if (b) prod.b = b;
+      const u = cellText(get(row, R.unit)); if (u) prod.u = u;
+      const im = cellText(get(row, R.img)); if (im) prod.i = im;
+      products.push(prod);
+      n++;
+    }
+    if (n) {
+      sheets.push({ name: sn, count: n });
+      if (!cols) cols = describeCols(h);
+      if (R.net != null && !netLabel) netLabel = labelFrom(h.raw[R.net]);
+    }
+  }
+  if (!products.length) throw new Error(explainMissing(wb));
+  st.dup = buildIndex(products).dups;
+  return { products, meta: { name, loadedAt: Date.now(), sheets, cols, netLabel, stats: st } };
+}
+
+function explainMissing(wb) {
+  const sn = wb.SheetNames[0];
+  let first = '';
+  try {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: '', blankrows: false });
+    const row = rows.find(r => r.filter(v => v !== '').length >= 2) || rows[0] || [];
+    first = row.filter(v => v !== '').slice(0, 8).map(cellText).join(', ');
+  } catch (e) {}
+  return 'No encontré las columnas de código y de precio. Hacen falta una columna de código de barras (EAN) o de código, y una de precio.' +
+    (first ? ` La primera fila con datos de la hoja "${sn}" dice: ${first}.` : '');
+}
+
+function buildIndex(products) {
+  const bc = new Map(), sku = new Map();
+  let dups = 0;
+  products.forEach((p, i) => {
+    for (const c of p.c) {
+      const k = codeKey(c);
+      if (!k) continue;
+      if (bc.has(k)) { if (bc.get(k) !== i) dups++; } else bc.set(k, i);
+    }
+    const ks = skuKey(p.s);
+    if (ks && !sku.has(ks)) sku.set(ks, i);
+  });
+  return { bc, sku, dups };
+}
+
+/* =====================================================================
+   Búsqueda
+   ===================================================================== */
+function candidates(raw) {
+  const t = String(raw).replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  const out = [t];
+  if (/^\][A-Za-z]\d/.test(t)) out.push(t.slice(3));                        // prefijo de simbología
+  const gs1 = t.match(/(?:\(01\)|^01)(\d{14})/); if (gs1) out.push(gs1[1]);   // GTIN dentro de un QR GS1
+  if (/^https?:\/\//i.test(t) || t.length > 24) {                           // QR con link
+    (t.match(/\d{8,14}/g) || []).forEach(x => out.push(x));
+    t.split(/[\/?&=#]+/).forEach(x => {
+      if (x.length < 3 || x.length > 40) return;
+      try { out.push(decodeURIComponent(x)); } catch (e) { out.push(x); }
+    });
+  }
+  return [...new Set(out)];
+}
+function lookup(raw) {
+  if (!catalog) return null;
+  for (const c of candidates(raw)) {
+    const kb = codeKey(c);
+    if (kb && index.bc.has(kb)) return { p: catalog.products[index.bc.get(kb)], by: 'bc', code: c };
+    const ks = skuKey(c);
+    if (ks && index.sku.has(ks)) return { p: catalog.products[index.sku.get(ks)], by: 'sku', code: c };
+  }
+  return null;
+}
+
+/* =====================================================================
+   Pantallas
+   ===================================================================== */
+const setScreen = name => { body.dataset.screen = name; };
+const setText = (sel, txt) => { const e = $(sel); e.textContent = txt || ''; e.hidden = !txt; };
+
+function renderIdle() {
+  const has = !!(catalog && catalog.products.length);
+  $('#idle-hint').textContent = has ? 'Acercá el código de barras del producto al lector.' : 'Todavía no hay una lista de precios cargada.';
+  setText('#idle-sub', has ? '' : 'Para cargarla, mantené apretado el logo.');
+  setText('#idle-foot', has ? `Precios actualizados el ${fmtDate(catalog.meta.loadedAt)}` : '');
+}
+
+let backTimer = null;
+function armTimer(sec) {
+  clearTimeout(backTimer);
+  const bar = $('#r-timer');
+  bar.style.transition = 'none';
+  bar.style.transform = 'scaleX(1)';
+  void bar.offsetWidth;
+  bar.style.transition = `transform ${sec}s linear`;
+  bar.style.transform = 'scaleX(0)';
+  backTimer = setTimeout(showIdle, sec * 1000);
+}
+function showIdle() { clearTimeout(backTimer); setScreen('idle'); }
+function replay() { const R = $('#result'); R.classList.remove('reveal'); void R.offsetWidth; R.classList.add('reveal'); }
+
+function imgUrl(v) {
+  const s = String(v).trim();
+  const m = s.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : s;
+}
+
+function addCode(dl, k, v) {
+  const d = document.createElement('div');
+  const dt = document.createElement('dt'); dt.textContent = k;
+  const dd = document.createElement('dd'); dd.textContent = v;
+  d.append(dt, dd); dl.append(d);
+}
+
+function showProduct(p, hit) {
+  const R = $('#result');
+  R.classList.remove('miss');
+  R.classList.toggle('has-img', !!p.i);
+  setText('#r-brand', p.b);
+  $('#r-name').textContent = p.d;
+  setText('#r-unit', p.u);
+
+  const fp = finalPrice(p.p);
+  const pl = $('#r-plaque');
+  if (fp == null) {
+    pl.innerHTML = '<span class="say">Precio a consultar</span>';
+    setText('#r-legend', 'Pedile el precio a un vendedor.');
+  } else {
+    const m = money(fp);
+    pl.innerHTML = `<span class="price" id="r-price"><span class="cur">$</span><span class="int">${m.i}</span>${m.d ? `<span class="dec">${m.d}</span>` : ''}</span>`;
+    setText('#r-legend', S.label);
+  }
+
+  const was = $('#r-was');
+  const op = p.o != null ? finalPrice(p.o) : null;
+  if (fp != null && op && op > fp) {
+    const pct = Math.round((1 - fp / op) * 100);
+    was.innerHTML = `<span>Antes <s>${moneyText(op)}</s></span>` + (pct >= 1 ? `<span class="chip">−${pct} %</span>` : '');
+    was.hidden = false;
+  } else was.hidden = true;
+
+  const net = p.n != null ? p.n : (S.showNet && p.p != null ? netPrice(p.p) : null);
+  const ne = $('#r-net');
+  ne.textContent = '';
+  if (net != null && fp != null) {
+    const b = document.createElement('b'); b.textContent = moneyText(net);
+    ne.append('PRECIO SIN IMPUESTOS NACIONALES ', b);
+  }
+  ne.hidden = !ne.childNodes.length;
+
+  const dl = $('#r-codes');
+  dl.textContent = '';
+  if (S.showCodes) {
+    if (p.s) addCode(dl, 'Código', skuShow(p.s));
+    const bc = hit.by === 'bc' ? hit.code : (p.c[0] || '');
+    if (bc) addCode(dl, /^\d{8}$|^\d{12,14}$/.test(bc) ? 'EAN' : 'Código de barras', bc);
+  }
+  dl.hidden = !dl.children.length;
+
+  const fig = $('#r-shot'), img = $('#r-img');
+  fig.classList.remove('ok');
+  if (p.i) {
+    img.onload = () => fig.classList.add('ok');
+    img.onerror = () => fig.classList.remove('ok');
+    img.src = imgUrl(p.i);
+  } else {
+    img.onload = img.onerror = null;
+    img.removeAttribute('src');
+  }
+
+  setScreen('result');
+  replay();
+  fit();
+  armTimer(Number(S.seconds) || 15);
+}
+
+function showMiss(code, noData) {
+  const R = $('#result');
+  R.classList.add('miss');
+  R.classList.remove('has-img');
+  setText('#r-brand', '');
+  setText('#r-unit', '');
+  $('#r-name').textContent = noData ? 'Todavía no hay precios cargados' : 'No encontramos este producto';
+  $('#r-plaque').innerHTML = '<span class="say">Consultá con un vendedor</span>';
+  setText('#r-legend', '');
+  $('#r-was').hidden = true;
+  $('#r-net').hidden = true;
+  const dl = $('#r-codes');
+  dl.textContent = '';
+  addCode(dl, 'Código leído', code);
+  dl.hidden = false;
+  setScreen('result');
+  replay();
+  fit();
+  armTimer(Math.min(Number(S.seconds) || 15, 8));
+}
+
+/* Ajusta el tamaño del precio para que entre siempre, en horizontal o vertical */
+function fit() {
+  const info = $('#r-info'), pl = $('#r-plaque'), name = $('#r-name');
+  const price = $('#r-price'), say = pl.querySelector('.say');
+  const target = price || say;
+  name.style.fontSize = '';
+  if (!target) return;
+  target.style.fontSize = '';
+  const start = parseFloat(getComputedStyle(target).fontSize);
+  const floor = start * 0.5;
+  let fs = start, n = 0;
+  const over = () => pl.offsetWidth > info.clientWidth + 0.5 || info.scrollHeight > info.clientHeight + 1;
+  while (over() && fs > floor && n++ < 40) { fs *= 0.94; target.style.fontSize = fs + 'px'; }
+  if (info.scrollHeight > info.clientHeight + 1) {
+    let ns = parseFloat(getComputedStyle(name).fontSize), k = 0;
+    const nfloor = ns * 0.7;
+    while (info.scrollHeight > info.clientHeight + 1 && ns > nfloor && k++ < 20) { ns *= 0.94; name.style.fontSize = ns + 'px'; }
+  }
+}
+let resizeT = null;
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (body.dataset.screen === 'result') fit(); }, 120); });
+
+/* =====================================================================
+   Lector (pistola en modo teclado): junta los caracteres y busca con Enter
+   ===================================================================== */
+function onScan(raw) {
+  const code = String(raw).replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  if (!code) return;
+  if (!catalog || !catalog.products.length) { showMiss(code, true); return; }
+  const hit = lookup(code);
+  if (hit) showProduct(hit.p, hit); else showMiss(code, false);
+}
+
+function bindScanner() {
+  let buf = '', times = [], t = null;
+  const reset = () => { buf = ''; times = []; clearTimeout(t); t = null; };
+  const submit = () => { const v = buf; reset(); if (v.trim().length >= 3) onScan(v); };
+  /* La pistola escribe de corrido (unos ms entre caracteres); una persona tipea mucho más lento.
+     Si llega de corrido y sin Enter, se busca solo; si se tipea a mano, se espera el Enter. */
+  const fromScanner = () => times.length >= 6 && (times[times.length - 1] - times[0]) / (times.length - 1) < 80;
+  window.addEventListener('keydown', e => {
+    if (state.overlay === 'pin') { pinKey(e); return; }
+    if (state.overlay) return;                                  // en el panel el teclado funciona normal
+    const now = performance.now();
+    if (times.length && now - times[times.length - 1] > 5000) reset();   // tipeo abandonado
+    if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'NumpadEnter') { e.preventDefault(); submit(); return; }
+    if (e.key === 'Escape') { reset(); return; }
+    if (e.key === 'Backspace') { e.preventDefault(); buf = buf.slice(0, -1); times.pop(); return; }
+    let ch = e.key;
+    if (ch === 'Unidentified' || ch === 'Process') {
+      const kc = e.keyCode;
+      if (kc >= 48 && kc <= 57) ch = String(kc - 48); else if (kc >= 96 && kc <= 105) ch = String(kc - 96); else return;
+    }
+    if (!ch || ch.length !== 1 || e.metaKey || (e.ctrlKey && !e.altKey)) return;
+    e.preventDefault();
+    buf += ch;
+    times.push(now);
+    clearTimeout(t);
+    t = setTimeout(() => { if (fromScanner()) submit(); }, 250);   // pistolas configuradas sin Enter al final
+  }, true);
+}
+
+/* =====================================================================
+   Acceso al panel: mantener apretado el logo + PIN
+   ===================================================================== */
+function bindLongPress() {
+  let t = null, el = null, x0 = 0, y0 = 0;
+  const cancel = () => { clearTimeout(t); t = null; if (el) el.classList.remove('pressing'); el = null; };
+  document.addEventListener('pointerdown', e => {
+    const tgt = e.target.closest('[data-admin]');
+    if (!tgt || state.overlay) return;
+    el = tgt; x0 = e.clientX; y0 = e.clientY;
+    el.classList.add('pressing');
+    t = setTimeout(() => { cancel(); openPin(); }, 1600);
+  });
+  document.addEventListener('pointermove', e => { if (t && Math.hypot(e.clientX - x0, e.clientY - y0) > 14) cancel(); });
+  document.addEventListener('pointerup', cancel);
+  document.addEventListener('pointercancel', cancel);
+  document.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+let pinBuf = '';
+function drawDots() {
+  const box = $('#pin-dots');
+  box.textContent = '';
+  const len = String(S.pin).length;
+  for (let i = 0; i < len; i++) { const d = document.createElement('i'); if (i < pinBuf.length) d.className = 'on'; box.append(d); }
+}
+function openPin() { clearTimeout(backTimer); state.overlay = 'pin'; pinBuf = ''; drawDots(); $('#pin').hidden = false; }
+function closePin() { $('#pin').hidden = true; state.overlay = null; }
+function pinPress(k) {
+  if (k === 'cancel') { closePin(); return; }
+  if (k === 'back') pinBuf = pinBuf.slice(0, -1);
+  else if (/^\d$/.test(k) && pinBuf.length < 6) pinBuf += k;
+  drawDots();
+  if (pinBuf.length === String(S.pin).length) {
+    if (pinBuf === String(S.pin)) { closePin(); openAdmin(); }
+    else {
+      const p = $('#pin');
+      p.classList.remove('bad'); void p.offsetWidth; p.classList.add('bad');
+      pinBuf = '';
+      setTimeout(drawDots, 320);
+    }
+  }
+}
+function pinKey(e) {
+  if (/^\d$/.test(e.key)) { e.preventDefault(); pinPress(e.key); }
+  else if (e.key === 'Backspace') { e.preventDefault(); pinPress('back'); }
+  else if (e.key === 'Escape') { e.preventDefault(); pinPress('cancel'); }
+  else if (e.key === 'Enter' || e.key === 'Tab') e.preventDefault();
+}
+
+/* =====================================================================
+   Panel
+   ===================================================================== */
+function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+function fillCols(dl, cols) {
+  dl.textContent = '';
+  (cols || []).forEach(([k, v]) => { dl.append(el('dt', null, k), el('dd', null, v)); });
+  dl.hidden = !dl.children.length;
+}
+function warnings(meta) {
+  const w = [], st = (meta && meta.stats) || {};
+  if (st.noPrice) w.push(`${plural(st.noPrice, 'producto sin precio: se muestra', 'productos sin precio: se muestran')} como "Precio a consultar".`);
+  if (st.dup) w.push(`${plural(st.dup, 'código de barras repetido', 'códigos de barras repetidos')}: se usa la primera fila donde aparece.`);
+  if (st.sci) w.push(`${plural(st.sci, 'código de barras viene escrito', 'códigos de barras vienen escritos')} como 7,79E+12 y no se ${st.sci === 1 ? 'puede' : 'pueden'} leer. Formateá esa columna como texto en el Excel.`);
+  if (st.noCode) w.push(`${plural(st.noCode, 'fila sin código se salteó', 'filas sin código se saltearon')}.`);
+  return w;
+}
+function fillWarn(ul, meta) { ul.textContent = ''; warnings(meta).forEach(t => ul.append(el('li', null, t))); }
+function sheetsText(meta) {
+  const sh = (meta && meta.sheets) || [];
+  if (sh.length <= 1) return '';
+  return 'Hojas leídas: ' + sh.map(s => `${s.name} (${fmtInt(s.count)})`).join(', ') + '.';
+}
+
+function renderAdmin() {
+  const has = !!(catalog && catalog.products.length);
+  $('#a-count').textContent = has ? plural(catalog.products.length, 'producto', 'productos') : 'Sin lista cargada';
+  $('#a-when').textContent = has ? `Cargada el ${fmtDate(catalog.meta.loadedAt)}.` : 'Cargá un Excel con columnas de código (o EAN), descripción y precio.';
+  const m = has ? catalog.meta : null;
+  $('#a-source').textContent = !has ? '' :
+    (m.source === 'auto' ? `Se actualiza sola desde ${m.url}. ` : `Cargada a mano desde ${m.name}. `) + sheetsText(m);
+  fillCols($('#a-cols'), has ? m.cols : []);
+  fillWarn($('#a-warn'), m);
+
+  $('#s-url').value = S.autoUrl || '';
+  $('#s-min').value = String(S.autoMin);
+  $('#s-basis').value = S.basis;
+  $('#s-iva').value = String(S.iva);
+  $('#s-round').checked = !!S.round;
+  $('#s-net').checked = !!S.showNet;
+  $('#s-label').value = S.label || '';
+  $('#s-sec').value = String(S.seconds);
+  $('#s-codes').checked = !!S.showCodes;
+  const r = state.remote;
+  $('#a-remote').textContent = !(S.autoUrl || '').trim() ? 'La búsqueda automática está apagada.' :
+    r ? `${r.ok ? 'Última revisión' : 'Último intento'}: ${fmtDate(r.at)}. ${r.msg}` : 'Todavía no se revisó.';
+  $('#a-version').textContent = `Versión ${VERSION}`;
+}
+
+function openAdmin() { clearTimeout(backTimer); setScreen('idle'); state.overlay = 'admin'; renderAdmin(); $('#admin').hidden = false; }
+function closeAdmin() {
+  if (!$('#modal').hidden) return;
+  $('#admin').hidden = true;
+  state.overlay = null;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  renderIdle();
+  if (state.pendingReload) location.reload();
+}
+
+function ask({ title, node, yes, no = 'Cancelar' }) {
+  return new Promise(res => {
+    const m = $('#modal'), b = $('#m-body'), y = $('#m-yes'), n = $('#m-no');
+    clearTimeout(toastT); $('#toast').classList.remove('show');
+    $('#m-title').textContent = title;
+    b.textContent = '';
+    if (node) b.append(node);
+    y.textContent = yes;
+    n.textContent = no || '';
+    n.hidden = !no;
+    m.hidden = false;
+    const done = v => { m.hidden = true; y.onclick = n.onclick = null; res(v); };
+    y.onclick = () => done(true);
+    n.onclick = () => done(false);
+  });
+}
+function summaryNode(meta, count) {
+  const f = document.createDocumentFragment();
+  f.append(el('p', null, `Encontré ${plural(count, 'producto', 'productos')} en ${meta.name}.`));
+  const sh = sheetsText(meta); if (sh) f.append(el('p', 'help', sh));
+  const dl = el('dl', 'cols'); fillCols(dl, meta.cols); f.append(dl);
+  const ul = el('ul', 'warn'); fillWarn(ul, meta); f.append(ul);
+  return f;
+}
+
+let toastT = null;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+async function saveCatalog(cat) {
+  try { await store.set('catalog', cat); }
+  catch (e) { throw new Error('No hay espacio en la tablet para guardar la lista.'); }
+  catalog = cat;
+  index = buildIndex(cat.products);
+  renderIdle();
+}
+
+async function act(a) {
+  if (a === 'close') closeAdmin();
+  else if (a === 'load') $('#file').click();
+  else if (a === 'sync') {
+    if (!(S.autoUrl || '').trim()) { toast('Primero escribí la dirección del Excel.'); return; }
+    toast('Buscando la lista…');
+    await checkRemote({ force: true });
+    toast(state.remote ? state.remote.msg : 'Listo');
+  }
+  else if (a === 'fullscreen') {
+    const d = document.documentElement;
+    if (d.requestFullscreen) d.requestFullscreen({ navigationUI: 'hide' }).catch(() => toast('Este navegador no deja pasar a pantalla completa desde acá.'));
+  }
+  else if (a === 'query') {
+    const v = $('#a-query').value.trim();
+    if (!v) { toast('Escribí un EAN o un código.'); return; }
+    $('#a-query').value = '';
+    closeAdmin();
+    onScan(v);
+  }
+  else if (a === 'pin') {
+    const v = $('#a-pin').value.trim();
+    if (!/^\d{4,6}$/.test(v)) { toast('El PIN tiene que tener de 4 a 6 números.'); return; }
+    S.pin = v; saveSettings(); $('#a-pin').value = '';
+    toast('PIN cambiado');
+  }
+  else if (a === 'wipe') {
+    const ok = await ask({ title: '¿Borrar la lista de esta tablet?', node: el('p', null, 'La consulta va a quedar sin precios hasta que cargues otro Excel o llegue una actualización automática.'), yes: 'Borrar lista' });
+    if (!ok) return;
+    await store.del('catalog');
+    catalog = null; index = { bc: new Map(), sku: new Map() };
+    if (state.remote) { state.remote.sig = null; writeJSON('volf.remoto', state.remote); }
+    renderAdmin(); renderIdle();
+    toast('Lista borrada');
+  }
+}
+
+function bindAdmin() {
+  $('#admin').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) act(b.dataset.act); });
+  $('#pin').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) pinPress(b.dataset.k); });
+  $('#result').addEventListener('click', e => { if (!e.target.closest('[data-admin]')) showIdle(); });
+
+  const saved = () => { saveSettings(); renderIdle(); toast('Guardado'); };
+  $('#s-url').addEventListener('change', e => { S.autoUrl = e.target.value.trim(); scheduleRemote(); saved(); renderAdmin(); });
+  $('#s-min').addEventListener('change', e => { S.autoMin = Number(e.target.value); scheduleRemote(); saved(); renderAdmin(); });
+  $('#s-basis').addEventListener('change', e => { S.basis = e.target.value; saved(); });
+  $('#s-iva').addEventListener('change', e => { S.iva = Number(e.target.value); saved(); });
+  $('#s-round').addEventListener('change', e => { S.round = e.target.checked; saved(); });
+  $('#s-net').addEventListener('change', e => { S.showNet = e.target.checked; saved(); });
+  $('#s-label').addEventListener('change', e => { S.label = e.target.value.trim(); saved(); });
+  $('#s-sec').addEventListener('change', e => { S.seconds = Number(e.target.value); saved(); });
+  $('#s-codes').addEventListener('change', e => { S.showCodes = e.target.checked; saved(); });
+  $('#a-query').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); act('query'); } });
+  $('#a-pin').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); act('pin'); } });
+
+  $('#file').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      toast('Leyendo el archivo…');
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      const cat = await parseBytes(bytes, f.name);
+      const ok = await ask({ title: '¿Cargar esta lista?', node: summaryNode(cat.meta, cat.products.length), yes: 'Cargar lista' });
+      if (!ok) return;
+      cat.meta.source = 'manual';
+      await saveCatalog(cat);
+      renderAdmin();
+      toast(`Lista cargada: ${plural(cat.products.length, 'producto', 'productos')}`);
+    } catch (err) {
+      await ask({ title: 'No pude leer ese archivo', node: el('p', null, err.message || String(err)), yes: 'Entendido', no: '' });
+    }
+  });
+}
+
+/* =====================================================================
+   Actualización automática desde el Excel publicado
+   ===================================================================== */
+let checking = false, remoteTimer = null;
+const fileName = u => { try { return decodeURIComponent(String(u).split(/[?#]/)[0].split('/').pop()) || String(u); } catch (e) { return String(u); } };
+function setRemote(ok, msg, sig) {
+  state.remote = { at: Date.now(), ok, msg, sig: sig != null ? sig : (state.remote && state.remote.sig) || null };
+  writeJSON('volf.remoto', state.remote);
+}
+async function checkRemote(opts = {}) {
+  const url = (S.autoUrl || '').trim();
+  if (!url || checking) return false;
+  if (!opts.force && state.remote && Date.now() - state.remote.at < 60000 && catalog) return false;
+  if (location.protocol === 'file:' && !/^https?:/i.test(url)) {
+    setRemote(false, 'La actualización automática funciona cuando la app está publicada en internet.');
+    return false;
+  }
+  checking = true;
+  try {
+    const u = new URL(url, location.href);
+    u.searchParams.set('_', Date.now().toString(36));
+    const res = await fetch(u.href, { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status === 404 ? `No está el archivo ${fileName(url)} en el servidor.` : `El servidor respondió con error ${res.status}.`);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    const sig = hashBytes(bytes);
+    if (!opts.force && catalog && state.remote && state.remote.sig === sig) { setRemote(true, 'Sin cambios.', sig); return false; }
+    const cat = await parseBytes(bytes, fileName(url));
+    cat.meta.source = 'auto';
+    cat.meta.url = url;
+    await saveCatalog(cat);
+    setRemote(true, `Lista actualizada: ${plural(cat.products.length, 'producto', 'productos')}.`, sig);
+    return true;
+  } catch (err) {
+    setRemote(false, navigator.onLine === false ? 'Sin conexión a internet.' : (err && err.message) || 'No se pudo leer el archivo.');
+    return false;
+  } finally {
+    checking = false;
+    if (state.overlay === 'admin') renderAdmin();
+  }
+}
+function scheduleRemote() {
+  clearInterval(remoteTimer);
+  const m = Number(S.autoMin) || 0;
+  if (m > 0 && (S.autoUrl || '').trim()) remoteTimer = setInterval(() => checkRemote(), m * 60000);
+}
+
+/* =====================================================================
+   Modo kiosco: pantalla siempre encendida, recarga nocturna, service worker
+   ===================================================================== */
+let wake = null;
+async function keepAwake() {
+  if (!('wakeLock' in navigator) || document.visibilityState !== 'visible' || wake) return;
+  try { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } catch (e) {}
+}
+function nightly() {
+  const d = new Date(), day = d.toDateString();
+  if (d.getHours() === 4 && localStorage.getItem('volf.recarga') !== day && body.dataset.screen === 'idle' && !state.overlay) {
+    try { localStorage.setItem('volf.recarga', day); } catch (e) {}
+    location.reload();
+  }
+}
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (!secure) return;
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js').then(reg => { setInterval(() => reg.update().catch(() => {}), 3600000); }).catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return;
+    if (state.overlay) state.pendingReload = true; else location.reload();
+  });
+}
+
+/* =====================================================================
+   Arranque
+   ===================================================================== */
+async function init() {
+  setScreen('idle');
+  bindScanner();
+  bindLongPress();
+  bindAdmin();
+  try {
+    const saved = await store.get('catalog');
+    if (saved && saved.products && saved.products.length) { catalog = saved; index = buildIndex(saved.products); }
+  } catch (e) {}
+  renderIdle();
+  keepAwake();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); checkRemote(); } });
+  document.addEventListener('pointerdown', keepAwake, { passive: true });
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  registerSW();
+  scheduleRemote();
+  setTimeout(() => checkRemote({ force: !catalog }), 1200);
+  window.addEventListener('online', () => checkRemote());
+  setInterval(nightly, 10 * 60 * 1000);
+}
+
+init();
+})();
+</script>
+</body>
+</html>
