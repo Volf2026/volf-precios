@@ -2,7 +2,7 @@
    Deja la app funcionando sin internet. La lista de precios (.xlsx / .csv) nunca se guarda acá:
    siempre se pide al servidor.
    Si cambiás archivos de la app, subí el número de VERSION para que la tablet los renueve. */
-const VERSION = 'volf-precios-1.0.3';
+const VERSION = 'volf-precios-1.1.0';
 const IMG_CACHE = 'volf-precios-fotos';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'xlsx.core.min.js',
@@ -29,9 +29,9 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;               // fotos o listas externas: directo a la red
-  if (/\.(xlsx|xlsm|xls|csv)$/i.test(url.pathname)) return;       // la lista siempre fresca
+  if (/\.(xlsx|xlsm|xls|csv|json)$/i.test(url.pathname)) return;  // la lista y el índice de fotos, siempre frescos
   if (req.mode === 'navigate') { event.respondWith(page(req)); return; }
-  if (req.destination === 'image') { event.respondWith(photo(req)); return; }
+  if (req.destination === 'image' || /\/fotos\/[^/]+\.(jpe?g|png|webp)$/i.test(url.pathname)) { event.respondWith(photo(req)); return; }
   event.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req)));
 });
 
@@ -50,13 +50,13 @@ async function page(req) {
   }
 }
 
-/* Fotos de productos publicadas junto a la app (carpeta fotos/): se guardan para usarlas sin internet */
+/* Fotos del banco de imágenes (carpeta fotos/): se guardan para usarlas sin internet */
 async function photo(req) {
   const hit = await caches.match(req);                          // íconos de la app o fotos ya guardadas
   if (hit) return hit;
   const cache = await caches.open(IMG_CACHE);
   const res = await fetch(req);
-  if (res.ok) { await cache.put(req, res.clone()); trim(cache, 600); }
+  if (res.ok) { await cache.put(req, res.clone()); trim(cache, 3000); }
   return res;
 }
 async function trim(cache, max) {
