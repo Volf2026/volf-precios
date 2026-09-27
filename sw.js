@@ -2,8 +2,9 @@
    Deja la app funcionando sin internet. La lista de precios (.xlsx / .csv) nunca se guarda acá:
    siempre se pide al servidor.
    Si cambiás archivos de la app, subí el número de VERSION para que la tablet los renueve. */
-const VERSION = 'volf-precios-1.1.0';
+const VERSION = 'volf-precios-1.2.0';
 const IMG_CACHE = 'volf-precios-fotos';
+const LIB_CACHE = 'volf-precios-lector';   // lector de códigos para la cámara (ZXing), se guarda la primera vez que se usa
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'xlsx.core.min.js',
   'bodoni-moda-latin.woff2', 'bodoni-moda-latin-ext.woff2',
@@ -19,7 +20,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== IMG_CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== IMG_CACHE && k !== LIB_CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -28,7 +29,10 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;               // fotos o listas externas: directo a la red
+  if (url.origin !== self.location.origin) {
+    if (/(^|\.)jsdelivr\.net$/.test(url.hostname) && url.pathname.includes('/zxing-wasm@')) event.respondWith(lector(req));
+    return;                                                       // el resto de lo externo, directo a la red
+  }
   if (/\.(xlsx|xlsm|xls|csv|json)$/i.test(url.pathname)) return;  // la lista y el índice de fotos, siempre frescos
   if (req.mode === 'navigate') { event.respondWith(page(req)); return; }
   if (req.destination === 'image' || /\/fotos\/[^/]+\.(jpe?g|png|webp)$/i.test(url.pathname)) { event.respondWith(photo(req)); return; }
@@ -57,6 +61,15 @@ async function photo(req) {
   const cache = await caches.open(IMG_CACHE);
   const res = await fetch(req);
   if (res.ok) { await cache.put(req, res.clone()); trim(cache, 3000); }
+  return res;
+}
+/* Lector de la cámara (versión fija): se guarda la primera vez y después funciona sin internet */
+async function lector(req) {
+  const cache = await caches.open(LIB_CACHE);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok) await cache.put(req, res.clone());
   return res;
 }
 async function trim(cache, max) {
