@@ -185,6 +185,31 @@ ul.warn:empty{display:none}
   padding:12px 18px;font-size:15px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
+/* ---------- Cámara (teléfonos) ---------- */
+.cam-btn{display:none;align-items:center;gap:10px;margin:clamp(20px,4.5vmin,44px) 0 0;padding:12px 22px;border:1px solid rgba(244,242,239,.45);
+  border-radius:999px;background:transparent;color:var(--porcelana);font-size:clamp(15px,3vmin,20px)}
+.cam-btn svg,.cam-fab svg,.cam-ic svg{width:22px;height:22px}
+body.cam-on .cam-btn{display:inline-flex}
+.cam-fab{position:fixed;z-index:6;right:calc(18px + env(safe-area-inset-right));bottom:calc(22px + env(safe-area-inset-bottom));width:60px;height:60px;
+  border:0;border-radius:50%;background:var(--negro);color:var(--porcelana);display:none;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.28)}
+.cam-fab svg{width:26px;height:26px}
+body.cam-on[data-screen="result"] .cam-fab{display:flex}
+.cam{position:fixed;inset:0;z-index:35;background:#000;overflow:hidden}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.visor{position:absolute;left:50%;top:46%;width:min(84vw,560px);aspect-ratio:16/9;transform:translate(-50%,-50%);
+  border:2px solid var(--porcelana);box-shadow:0 0 0 200vmax rgba(0,0,0,.5)}
+.visor::before,.visor::after{content:"";position:absolute;left:9%;right:9%;height:6px;background:var(--porcelana)}
+.visor::before{top:-1px;transform:translateY(-50%)}
+.visor::after{bottom:-1px;transform:translateY(50%)}
+.visor .linea{position:absolute;left:4%;right:4%;top:50%;height:2px;background:rgba(244,242,239,.9);box-shadow:0 0 12px 2px rgba(244,242,239,.35);animation:visor 1.8s ease-in-out infinite alternate}
+@keyframes visor{from{top:12%}to{top:88%}}
+.cam.lista .visor{border-color:#fff}
+.cam-top{position:absolute;left:0;right:0;top:calc(14px + env(safe-area-inset-top));display:flex;justify-content:flex-end;gap:12px;padding:0 16px}
+.cam-ic{width:48px;height:48px;border:0;border-radius:50%;background:rgba(29,29,27,.72);color:var(--porcelana);display:flex;align-items:center;justify-content:center}
+.cam-ic[aria-pressed="true"]{background:var(--porcelana);color:var(--negro)}
+.cam-msg{position:absolute;left:0;right:0;bottom:calc(36px + env(safe-area-inset-bottom));margin:0;padding:0 28px;text-align:center;
+  color:var(--porcelana);font-size:clamp(16px,4vmin,21px);line-height:1.4;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -203,6 +228,7 @@ ul.warn:empty{display:none}
   <h1 class="idle-title">Consultá el precio</h1>
   <p class="idle-hint" id="idle-hint">Acercá el código de barras del producto al lector.</p>
   <p class="idle-sub" id="idle-sub" hidden></p>
+  <button class="cam-btn" type="button" data-cam><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8h3.2l1.9-2.5h6.8L17.3 8h3.2v11h-17z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13.3" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Escanear con la cámara</button>
   <p class="idle-foot" id="idle-foot" hidden></p>
 </section>
 
@@ -226,6 +252,19 @@ ul.warn:empty{display:none}
   </div>
   <div class="timer" aria-hidden="true"><i id="r-timer"></i></div>
 </section>
+
+<button class="cam-fab" type="button" data-cam aria-label="Escanear otro producto con la cámara"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8h3.2l1.9-2.5h6.8L17.3 8h3.2v11h-17z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13.3" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+
+<!-- Cámara -->
+<div id="cam" class="cam" role="dialog" aria-modal="true" aria-label="Escanear con la cámara" hidden>
+  <video id="cam-video" playsinline muted autoplay></video>
+  <div class="visor" aria-hidden="true"><i class="linea"></i></div>
+  <div class="cam-top">
+    <button type="button" class="cam-ic" id="cam-torch" aria-label="Linterna" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l-1.5 5h-5zM9.5 8h5v13h-5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 12v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <button type="button" class="cam-ic" id="cam-close" aria-label="Cerrar la cámara"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <p class="cam-msg" id="cam-msg">Apuntá al código de barras</p>
+</div>
 
 <!-- PIN -->
 <div id="pin" class="pin" role="dialog" aria-modal="true" aria-labelledby="pin-t" hidden>
@@ -318,6 +357,13 @@ ul.warn:empty{display:none}
         </select>
       </label>
       <label class="check"><input type="checkbox" id="s-codes"> Mostrar el código y el EAN del producto</label>
+      <label class="field">Botón para escanear con la cámara
+        <select id="s-cam">
+          <option value="auto">Automático: solo en teléfonos</option>
+          <option value="on">Mostrar siempre</option>
+          <option value="off">No mostrar</option>
+        </select>
+      </label>
       <div class="row"><button class="btn" data-act="fullscreen">Pantalla completa</button></div>
     </section>
 
@@ -362,7 +408,7 @@ ul.warn:empty{display:none}
 (() => {
 'use strict';
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const $ = (s, r = document) => r.querySelector(s);
 const body = document.body;
 
@@ -372,7 +418,7 @@ const body = document.body;
 const DEFAULTS = {
   pin: '1234', label: 'Precio final', seconds: 15, showCodes: true,
   basis: 'neto', iva: 21, showNet: true, round: false,
-  autoUrl: 'precios.xlsx', autoMin: 30, v: 2
+  autoUrl: 'precios.xlsx', autoMin: 30, camera: 'auto', v: 2
 };
 const readJSON = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } };
 const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
@@ -917,6 +963,7 @@ function bindScanner() {
   const fromScanner = () => times.length >= 6 && (times[times.length - 1] - times[0]) / (times.length - 1) < 80;
   window.addEventListener('keydown', e => {
     if (state.overlay === 'pin') { pinKey(e); return; }
+    if (state.overlay === 'cam') { if (e.key === 'Escape') closeCamera(); return; }
     if (state.overlay) return;                                  // en el panel el teclado funciona normal
     const now = performance.now();
     if (times.length && now - times[times.length - 1] > 5000) reset();   // tipeo abandonado
@@ -1036,6 +1083,7 @@ function renderAdmin() {
   $('#s-label').value = S.label || '';
   $('#s-sec').value = String(S.seconds);
   $('#s-codes').checked = !!S.showCodes;
+  $('#s-cam').value = S.camera || 'auto';
   const r = state.remote;
   $('#a-remote').textContent = !(S.autoUrl || '').trim() ? 'La búsqueda automática está apagada.' :
     r ? `${r.ok ? 'Última revisión' : 'Último intento'}: ${fmtDate(r.at)}. ${r.msg}` : 'Todavía no se revisó.';
@@ -1147,6 +1195,7 @@ function bindAdmin() {
   $('#s-label').addEventListener('change', e => { S.label = e.target.value.trim(); saved(); });
   $('#s-sec').addEventListener('change', e => { S.seconds = Number(e.target.value); saved(); });
   $('#s-codes').addEventListener('change', e => { S.showCodes = e.target.checked; saved(); });
+  $('#s-cam').addEventListener('change', e => { S.camera = e.target.value; saved(); applyCamera(); });
   $('#a-query').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); act('query'); } });
   $('#a-pin').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); act('pin'); } });
 
@@ -1289,6 +1338,155 @@ function registerSW() {
 }
 
 /* =====================================================================
+   Escanear con la cámara del teléfono
+   Android (Chrome): lector de códigos nativo. iPhone y el resto: ZXing (WebAssembly),
+   que se baja la primera vez y queda guardado para usar sin internet.
+   ===================================================================== */
+const ZXING_JS = 'https://fastly.jsdelivr.net/npm/zxing-wasm@3.1.4/dist/iife/reader/index.js';
+const ZXING_SRI = 'sha384-PN2+TcV6o3ygq0xnuFCxKBra0Yt4uPsZhoQ/vGYAwE57BrG9nHTvynv6YPyluWaU';
+const cam = { stream: null, detector: null, timer: null, busy: false, canvas: null, torch: false };
+
+const isPhone = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches) &&
+  Math.min(screen.width, screen.height) < 520;
+const cameraEnabled = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) &&
+  (S.camera === 'on' || (S.camera !== 'off' && isPhone()));
+function applyCamera() { body.classList.toggle('cam-on', cameraEnabled()); }
+
+function loadScript(src, integrity) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src;
+    if (integrity) { s.integrity = integrity; s.crossOrigin = 'anonymous'; }
+    s.onload = () => res();
+    s.onerror = () => rej(new Error('lector'));
+    document.head.appendChild(s);
+  });
+}
+
+async function getDetector() {
+  if (cam.detector) return cam.detector;
+  if ('BarcodeDetector' in window) {
+    try {
+      const soportados = await BarcodeDetector.getSupportedFormats();
+      const formatos = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code', 'data_matrix'].filter(f => soportados.includes(f));
+      if (formatos.includes('ean_13')) {
+        const d = new BarcodeDetector({ formats: formatos });
+        cam.detector = { native: true, detect: async c => (await d.detect(c)).map(b => b.rawValue).filter(Boolean) };
+        return cam.detector;
+      }
+    } catch (e) {}
+  }
+  if (!window.ZXingWASM) await loadScript(ZXING_JS, ZXING_SRI);
+  const opciones = { formats: ['EANUPC', 'Code128', 'Code39', 'ITF', 'QRCode', 'DataMatrix'], tryHarder: true, maxNumberOfSymbols: 1 };
+  cam.detector = { native: false, detect: async img => (await ZXingWASM.readBarcodes(img, opciones)).filter(r => r.isValid && r.text).map(r => r.text) };
+  return cam.detector;
+}
+
+const camMsg = t => { $('#cam-msg').textContent = t; };
+
+async function openCamera() {
+  if (state.overlay) return;
+  clearTimeout(backTimer);
+  state.overlay = 'cam';
+  const box = $('#cam');
+  box.hidden = false;
+  box.classList.remove('lista');
+  camMsg('Abriendo la cámara…');
+  $('#cam-torch').hidden = true;
+  if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    camMsg('Este navegador no deja usar la cámara. Abrí la app desde Chrome o Safari.');
+    return;
+  }
+  try {
+    cam.stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+  } catch (e) {
+    camMsg(e && e.name === 'NotAllowedError'
+      ? 'La cámara está bloqueada para esta página. Permitila en los ajustes del navegador y volvé a probar.'
+      : 'No se pudo abrir la cámara.');
+    return;
+  }
+  if (state.overlay !== 'cam') { stopStream(); return; }
+  const video = $('#cam-video');
+  video.srcObject = cam.stream;
+  try { await video.play(); } catch (e) {}
+  const track = cam.stream.getVideoTracks()[0];
+  try {
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (caps.focusMode && caps.focusMode.includes('continuous')) track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+    if (caps.torch) { cam.torch = false; $('#cam-torch').setAttribute('aria-pressed', 'false'); $('#cam-torch').hidden = false; }
+  } catch (e) {}
+  try {
+    await getDetector();
+  } catch (e) {
+    camMsg('No se pudo cargar el lector de la cámara. Revisá la conexión y probá de nuevo.');
+    return;
+  }
+  if (state.overlay !== 'cam') return;
+  box.classList.add('lista');
+  camMsg('Apuntá al código de barras');
+  scanFrame();
+}
+
+async function scanFrame() {
+  if (state.overlay !== 'cam' || !cam.stream) return;
+  const video = $('#cam-video');
+  if (!cam.busy && video.readyState >= 2 && video.videoWidth) {
+    cam.busy = true;
+    try {
+      const vw = video.videoWidth, vh = video.videoHeight;
+      const sw = Math.round(vw * 0.9), sh = Math.round(vh * (vw > vh ? 0.7 : 0.45));   // zona del visor
+      const k = Math.min(1, 1000 / sw);
+      const c = cam.canvas || (cam.canvas = document.createElement('canvas'));
+      c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, c.width, c.height);
+      const codigos = await cam.detector.detect(cam.detector.native ? c : ctx.getImageData(0, 0, c.width, c.height));
+      if (codigos.length && state.overlay === 'cam') {
+        if (navigator.vibrate) navigator.vibrate(60);
+        closeCamera();
+        onScan(codigos[0]);
+        return;
+      }
+    } catch (e) {
+    } finally {
+      cam.busy = false;
+    }
+  }
+  cam.timer = setTimeout(scanFrame, 90);
+}
+
+function stopStream() {
+  if (cam.stream) cam.stream.getTracks().forEach(tr => tr.stop());
+  cam.stream = null;
+}
+function closeCamera() {
+  clearTimeout(cam.timer);
+  stopStream();
+  const video = $('#cam-video');
+  video.srcObject = null;
+  $('#cam').hidden = true;
+  if (state.overlay === 'cam') state.overlay = null;
+}
+async function toggleTorch() {
+  if (!cam.stream) return;
+  cam.torch = !cam.torch;
+  try { await cam.stream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: cam.torch }] }); } catch (e) { cam.torch = false; }
+  $('#cam-torch').setAttribute('aria-pressed', String(cam.torch));
+}
+function bindCamera() {
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-cam]')) { e.preventDefault(); e.stopPropagation(); openCamera(); }
+  });
+  $('#cam-close').addEventListener('click', closeCamera);
+  $('#cam-torch').addEventListener('click', toggleTorch);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && state.overlay === 'cam') closeCamera(); });
+  applyCamera();
+}
+
+/* =====================================================================
    Arranque
    ===================================================================== */
 async function init() {
@@ -1296,6 +1494,7 @@ async function init() {
   bindScanner();
   bindLongPress();
   bindAdmin();
+  bindCamera();
   try {
     const saved = await store.get('catalog');
     if (saved && saved.products && saved.products.length) { catalog = saved; index = buildIndex(saved.products); }
